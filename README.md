@@ -1,13 +1,11 @@
 ---
-title: GENATATOR Gene-level Metric
+title: gene-level-metric
 emoji: 🧬
 colorFrom: green
 colorTo: blue
 sdk: docker
-app_port: 7860
 pinned: false
-license: apache-2.0
-short_description: Exact gene-level metric playground for GENATATOR-style exon/CDS masks
+short_description: Gene-level metric playground
 ---
 
 # GENATATOR Gene-level Metric
