@@ -1,8 +1,5 @@
 import React, { useMemo, useState } from "react";
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Alert,
   AppBar,
   Box,
@@ -12,10 +9,15 @@ import {
   Container,
   Divider,
   FormControlLabel,
+  FormGroup,
   Grid,
+  MenuItem,
   Paper,
+  Select,
   Stack,
   Switch,
+  Tab,
+  Tabs,
   Table,
   TableBody,
   TableCell,
@@ -24,48 +26,156 @@ import {
   TableRow,
   TextField,
   Toolbar,
-  Tooltip,
   Typography,
 } from "@mui/material";
 import ScienceIcon from "@mui/icons-material/Science";
-import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import TuneIcon from "@mui/icons-material/Tune";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
+import CodeIcon from "@mui/icons-material/Code";
 import BiotechIcon from "@mui/icons-material/Biotech";
 
-const PREDS_PLACEHOLDER = `[
-  [0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0],
-  [0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0]
+const PYTHON_PREDS_PLACEHOLDER = `[
+  [
+    [0, 0],
+    [1, 0],
+    [1, 1],
+    [0, 0],
+    [1, 1],
+    [1, 1],
+    [0, 0],
+    [0, 0]
+  ],
+  [
+    [0, 0],
+    [1, 0],
+    [1, 0],
+    [0, 0],
+    [0, 0],
+    [0, 0],
+    [1, 0],
+    [1, 0],
+    [0, 0],
+    [0, 0]
+  ]
 ]`;
 
-const TARGETS_PLACEHOLDER = `[
-  [0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0],
-  [0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0]
+const PYTHON_TARGETS_PLACEHOLDER = `[
+  [
+    [0, 0],
+    [1, 0],
+    [1, 1],
+    [0, 0],
+    [1, 1],
+    [1, 1],
+    [0, 0],
+    [0, 0]
+  ],
+  [
+    [0, 0],
+    [1, 0],
+    [1, 0],
+    [1, 0],
+    [0, 0],
+    [0, 0],
+    [1, 0],
+    [1, 0],
+    [0, 0],
+    [0, 0]
+  ]
 ]`;
 
-const MAPPING_PLACEHOLDER = `chr1|mRNA|GENE0001|TX0001|+|1-12
-chr1|lncRNA|GENE0002|TX0002|+|1-12`;
+const MAPPING_PLACEHOLDER = `TX0001|GENE0001|mRNA|+|GRCh38|chr1|1-8
+TX0002|GENE0002|lnc_RNA|-|GRCh38|chr5|1-10`;
 
-const DNA_PLACEHOLDER = `[
-  "ATGCGTAACTGA",
-  "TTACTGACCTGA"
-]`;
+const PYTHON_API_SNIPPET = `import evaluate
 
-const DEFAULT_DSS = "GT, GC, AT";
-const DEFAULT_ASS = "AG, AC, TG";
+metric = evaluate.load("shmelev/gene-level-metric")
 
-const EMPTY_FORM = {
+result = metric.compute(
+    preds=[
+        [
+            [0, 0],
+            [1, 0],
+            [1, 1],
+            [0, 0],
+            [1, 1],
+            [1, 1],
+            [0, 0],
+            [0, 0],
+        ]
+    ],
+    targets=[
+        [
+            [0, 0],
+            [1, 0],
+            [1, 1],
+            [0, 0],
+            [1, 1],
+            [1, 1],
+            [0, 0],
+            [0, 0],
+        ]
+    ],
+    mapping=[
+        "TX0001|GENE0001|mRNA|+|GRCh38|chr1|1-8",
+    ],
+    stratifier="type",
+    types=["mRNA", "lnc_RNA"],
+    segments=["exon", "CDS"],
+)
+
+print(result)`;
+
+const GFF_API_SNIPPET = `import evaluate
+
+metric = evaluate.load("shmelev/gene-level-metric")
+
+result = metric.compute(
+    pred_gff="predictions.gff",
+    true_gff="reference.gff",
+    stratifier="type",
+    types=["mRNA", "lnc_RNA"],
+    segments=["exon", "CDS"],
+)
+
+print(result)`;
+
+const STRATIFIERS = [
+  { value: "type", label: "type / transcript_type" },
+  { value: "transcript", label: "transcript / transcript_id" },
+  { value: "gene", label: "gene / gene_id" },
+  { value: "chromosome", label: "chromosome" },
+  { value: "strand", label: "strand" },
+];
+
+const TYPE_OPTIONS = [
+  { value: "mRNA", label: "mRNA" },
+  { value: "lnc_RNA", label: "lnc_RNA" },
+];
+
+const SEGMENT_OPTIONS = [
+  { value: "exon", label: "exon" },
+  { value: "CDS", label: "CDS" },
+];
+
+const EMPTY_PYTHON_FORM = {
   predsText: "",
   targetsText: "",
   mappingText: "",
-  dnaText: "",
-  cdsHeuristics: false,
-  spliceFilter: false,
-  dssText: DEFAULT_DSS,
-  assText: DEFAULT_ASS,
+  stratifier: "type",
+  types: ["mRNA", "lnc_RNA"],
+  segments: ["exon", "CDS"],
+};
+
+const EMPTY_GFF_FORM = {
+  stratifier: "type",
+  types: ["mRNA", "lnc_RNA"],
+  segments: ["exon", "CDS"],
+  predFile: null,
+  trueFile: null,
+  predFileName: "",
+  trueFileName: "",
 };
 
 function prettyJson(value) {
@@ -76,25 +186,16 @@ function mappingToText(mapping) {
   return Array.isArray(mapping) ? mapping.join("\n") : "";
 }
 
-function dnaToText(value) {
-  if (Array.isArray(value)) {
-    return prettyJson(value);
-  }
-  return value || "";
-}
-
-function parseJsonArray(text, label) {
+function parseJsonText(text, label) {
   let parsed;
   try {
     parsed = JSON.parse(text);
   } catch {
     throw new Error(`${label} must be valid JSON.`);
   }
-
-  if (!Array.isArray(parsed) || parsed.some((row) => !Array.isArray(row))) {
-    throw new Error(`${label} must be a JSON array of arrays.`);
+  if (!Array.isArray(parsed)) {
+    throw new Error(`${label} must be a JSON array.`);
   }
-
   return parsed;
 }
 
@@ -105,17 +206,10 @@ function parseMapping(text) {
   }
 
   if (trimmed.startsWith("[")) {
-    let parsed;
-    try {
-      parsed = JSON.parse(trimmed);
-    } catch {
-      throw new Error("Mapping must be either newline-separated text or a JSON array of strings.");
+    const parsed = parseJsonText(trimmed, "mapping");
+    if (parsed.some((item) => typeof item !== "string")) {
+      throw new Error("mapping JSON must be an array of strings.");
     }
-
-    if (!Array.isArray(parsed) || parsed.some((item) => typeof item !== "string")) {
-      throw new Error("Mapping JSON must be an array of strings.");
-    }
-
     return parsed;
   }
 
@@ -125,49 +219,6 @@ function parseMapping(text) {
     .filter(Boolean);
 }
 
-function parseDna(text) {
-  const trimmed = text.trim();
-  if (!trimmed) {
-    return "";
-  }
-
-  if (trimmed.startsWith("[")) {
-    let parsed;
-    try {
-      parsed = JSON.parse(trimmed);
-    } catch {
-      throw new Error("DNA sequences must be a raw string, newline-separated strings, or a JSON array of strings.");
-    }
-
-    if (!Array.isArray(parsed) || parsed.some((item) => typeof item !== "string")) {
-      throw new Error("DNA JSON must be an array of strings.");
-    }
-
-    return parsed.map((item) => item.replace(/\s+/g, "").toUpperCase());
-  }
-
-  const lines = trimmed
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => line.replace(/\s+/g, "").toUpperCase());
-
-  if (lines.length === 1) {
-    return lines[0];
-  }
-
-  return lines;
-}
-
-function parseMotifs(text, fallback) {
-  const items = text
-    .split(",")
-    .map((item) => item.trim().toUpperCase())
-    .filter(Boolean);
-
-  return items.length ? items : fallback;
-}
-
 function segmentListToString(segments) {
   if (!segments || segments.length === 0) {
     return "—";
@@ -175,501 +226,759 @@ function segmentListToString(segments) {
   return segments.map(([start, end]) => `[${start}, ${end})`).join(", ");
 }
 
-function ParameterChip({ label, active }) {
+function CodePanel({ children }) {
   return (
-    <Chip
-      label={`${label}: ${active ? "on" : "off"}`}
-      color={active ? "primary" : "default"}
-      variant={active ? "filled" : "outlined"}
-      size="small"
-    />
+    <Box component="pre" className="code-panel mono">
+      {children}
+    </Box>
+  );
+}
+
+function SegmentScrollBox({ segments }) {
+  const value = segmentListToString(segments);
+  return (
+    <Box className="segment-scrollbox mono" title={value}>
+      {value}
+    </Box>
+  );
+}
+
+function MatchChip({ value }) {
+  if (value === null || value === undefined) {
+    return <Chip size="small" label="n/a" variant="outlined" />;
+  }
+  if (value) {
+    return <Chip size="small" label="match" color="success" />;
+  }
+  return <Chip size="small" label="mismatch" color="error" />;
+}
+
+function SectionTitle({ icon, title, subtitle }) {
+  return (
+    <Stack spacing={1.1}>
+      <Stack direction="row" alignItems="center" spacing={1}>
+        {icon}
+        <Typography variant="h5">{title}</Typography>
+      </Stack>
+      {subtitle ? (
+        <Typography color="text.secondary">{subtitle}</Typography>
+      ) : null}
+    </Stack>
+  );
+}
+
+function SummaryCard({ label, value }) {
+  return (
+    <Box className="summary-chip-box">
+      <Typography variant="body2" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography variant="h5" sx={{ mt: 0.5 }}>
+        {value}
+      </Typography>
+    </Box>
+  );
+}
+
+function DetailTable({ details, segments }) {
+  if (!details || details.length === 0) {
+    return (
+      <Alert severity="info">
+        No transcript rows are available for the current filters.
+      </Alert>
+    );
+  }
+
+  return (
+    <Box className="result-table-wrap">
+      <Table className="metric-table">
+        <TableHead>
+          <TableRow>
+            <TableCell>Transcript</TableCell>
+            <TableCell>Gene</TableCell>
+            <TableCell>Type / strand</TableCell>
+            <TableCell>Coordinate / length</TableCell>
+            {segments.map((segment) => (
+              <React.Fragment key={segment}>
+                <TableCell className="segment-column">{segment} predicted</TableCell>
+                <TableCell className="segment-column">{segment} target</TableCell>
+                <TableCell>{segment} match</TableCell>
+              </React.Fragment>
+            ))}
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {details.map((row) => (
+            <TableRow key={`${row.transcript_id}-${row.gene_id}`}>
+              <TableCell>
+                <Typography fontWeight={760}>{row.transcript_id}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {row.seqid}
+                </Typography>
+              </TableCell>
+              <TableCell>{row.gene_id}</TableCell>
+              <TableCell>{`${row.transcript_type} / ${row.strand}`}</TableCell>
+              <TableCell>
+                <Typography>{row.coord}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {row.length} nt
+                </Typography>
+              </TableCell>
+              {segments.map((segment) => (
+                <React.Fragment key={`${row.transcript_id}-${segment}`}>
+                  <TableCell>
+                    <SegmentScrollBox segments={row.segments?.[segment]?.predicted || []} />
+                  </TableCell>
+                  <TableCell>
+                    <SegmentScrollBox segments={row.segments?.[segment]?.target || []} />
+                  </TableCell>
+                  <TableCell>
+                    <MatchChip value={row.segments?.[segment]?.match} />
+                  </TableCell>
+                </React.Fragment>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </Box>
   );
 }
 
 export default function App() {
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [tab, setTab] = useState("python");
+  const [pythonForm, setPythonForm] = useState(EMPTY_PYTHON_FORM);
+  const [gffForm, setGffForm] = useState(EMPTY_GFF_FORM);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const scoreLabel = useMemo(() => {
-    if (!result) {
-      return "—";
-    }
-    return `${(result.score * 100).toFixed(2)}%`;
+  const segmentTotals = useMemo(() => {
+    return result?.totals_by_segment || {};
   }, [result]);
 
-  const setField = (key) => (event) => {
-    const value = event?.target?.type === "checkbox" ? event.target.checked : event.target.value;
-    setForm((current) => ({ ...current, [key]: value }));
+  const setPythonField = (key) => (event) => {
+    setPythonForm((current) => ({ ...current, [key]: event.target.value }));
   };
 
-  const fillFromExample = async (kind) => {
+  const setGffField = (key) => (event) => {
+    setGffForm((current) => ({ ...current, [key]: event.target.value }));
+  };
+
+  const toggleArrayValue = (scope, key, value) => (event) => {
+    const checked = event.target.checked;
+    if (scope === "python") {
+      setPythonForm((current) => ({
+        ...current,
+        [key]: checked
+          ? [...current[key], value]
+          : current[key].filter((item) => item !== value),
+      }));
+    } else {
+      setGffForm((current) => ({
+        ...current,
+        [key]: checked
+          ? [...current[key], value]
+          : current[key].filter((item) => item !== value),
+      }));
+    }
+  };
+
+  const handleFilePick = (key) => (event) => {
+    const file = event.target.files?.[0] || null;
+    setGffForm((current) => ({
+      ...current,
+      [key]: file,
+      [`${key}Name`]: file?.name || "",
+    }));
+  };
+
+  const fillPythonExample = async () => {
     setError("");
     try {
-      const response = await fetch("/api/example");
-      const data = await response.json();
-      const example = data[kind];
-      if (!example) {
-        throw new Error("Example preset was not found.");
-      }
-
-      setForm({
-        predsText: prettyJson(example.preds),
-        targetsText: prettyJson(example.targets),
-        mappingText: mappingToText(example.mapping),
-        dnaText: dnaToText(example.dna_sequences),
-        cdsHeuristics: example.cds_heuristics,
-        spliceFilter: example.splice_filter,
-        dssText: (example.dss || []).join(", "),
-        assText: (example.ass || []).join(", "),
+      const response = await fetch("/api/example/python");
+      const payload = await response.json();
+      setTab("python");
+      setPythonForm({
+        predsText: prettyJson(payload.preds),
+        targetsText: prettyJson(payload.targets),
+        mappingText: mappingToText(payload.mapping),
+        stratifier: payload.stratifier,
+        types: payload.types,
+        segments: payload.segments,
       });
       setResult(null);
-    } catch (err) {
-      setError(err.message || "Failed to load example.");
+    } catch {
+      setError("Could not load the built-in example.");
     }
   };
 
   const clearAll = () => {
-    setForm(EMPTY_FORM);
     setResult(null);
     setError("");
+    setPythonForm(EMPTY_PYTHON_FORM);
+    setGffForm(EMPTY_GFF_FORM);
   };
 
-  const computeMetric = async () => {
-    setError("");
+  const computePython = async () => {
     setLoading(true);
+    setError("");
     setResult(null);
 
     try {
-      const payload = {
-        preds: parseJsonArray(form.predsText, "Predictions"),
-        targets: parseJsonArray(form.targetsText, "Targets"),
-        mapping: parseMapping(form.mappingText),
-        dna_sequences: parseDna(form.dnaText),
-        cds_heuristics: form.cdsHeuristics,
-        splice_filter: form.spliceFilter,
-        dss: parseMotifs(form.dssText, ["GT", "GC", "AT"]),
-        ass: parseMotifs(form.assText, ["AG", "AC", "TG"]),
-      };
+      const preds = parseJsonText(pythonForm.predsText, "preds");
+      const targets = parseJsonText(pythonForm.targetsText, "targets");
+      const mapping = parseMapping(pythonForm.mappingText);
 
-      const response = await fetch("/api/compute", {
+      const response = await fetch("/api/compute/python", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          preds,
+          targets,
+          mapping,
+          stratifier: pythonForm.stratifier,
+          types: pythonForm.types,
+          segments: pythonForm.segments,
+        }),
       });
 
-      const data = await response.json();
+      const payload = await response.json();
       if (!response.ok) {
-        throw new Error(data.detail || "Metric computation failed.");
+        throw new Error(payload.detail || "Computation failed.");
       }
 
-      setResult(data);
+      setResult(payload);
     } catch (err) {
-      setError(err.message || "Metric computation failed.");
+      setError(err.message || "Computation failed.");
     } finally {
       setLoading(false);
     }
   };
 
+  const computeGff = async () => {
+    setLoading(true);
+    setError("");
+    setResult(null);
+
+    try {
+      if (!gffForm.predFile || !gffForm.trueFile) {
+        throw new Error("Please choose both prediction and reference GFF files.");
+      }
+
+      const pred_gff_text = await gffForm.predFile.text();
+      const true_gff_text = await gffForm.trueFile.text();
+
+      const response = await fetch("/api/compute/gff", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          pred_gff_text,
+          true_gff_text,
+          stratifier: gffForm.stratifier,
+          types: gffForm.types,
+          segments: gffForm.segments,
+        }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.detail || "Computation failed.");
+      }
+
+      setResult(payload);
+      setGffForm((current) => ({
+        ...current,
+        predFile: null,
+        trueFile: null,
+      }));
+    } catch (err) {
+      setError(err.message || "Computation failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const activeSegments = result?.segments || (tab === "python" ? pythonForm.segments : gffForm.segments);
+
   return (
-    <Box minHeight="100vh">
-      <AppBar position="sticky" elevation={0} color="transparent">
+    <Box>
+      <AppBar position="sticky">
         <Toolbar>
-          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexGrow: 1 }}>
-            <ScienceIcon color="primary" />
-            <Box>
-              <Typography variant="h6" sx={{ lineHeight: 1.1 }}>
-                GENATATOR Gene-level Metric
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Exact transcript agreement with optional splice filtering and CDS heuristics
-              </Typography>
-            </Box>
-          </Stack>
-          <Tooltip title="This app is built as a Docker Space with a React frontend and FastAPI backend.">
-            <Chip label="Single-page playground" color="primary" variant="outlined" />
-          </Tooltip>
+          <BiotechIcon sx={{ mr: 1.2 }} />
+          <Typography variant="h6">Gene-level Metric</Typography>
         </Toolbar>
       </AppBar>
 
       <Container maxWidth="xl" sx={{ py: 4 }}>
-        <Paper className="glass-card hero-card" sx={{ p: { xs: 3, md: 4 }, mb: 3 }}>
-          <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} md={8}>
-              <Stack spacing={2}>
-                <Chip label="Metric playground" color="success" sx={{ alignSelf: "flex-start" }} />
-                <Typography variant="h3">Compute the GENATATOR gene-level score in the browser.</Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 860 }}>
-                  Paste prediction masks, target masks, mapping rows, optional DNA sequence input,
-                  switch heuristics on or off, and get an exact gene-level score with per-transcript
-                  details.
-                </Typography>
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} flexWrap="wrap">
-                  <ParameterChip label="splice filter" active={form.spliceFilter} />
-                  <ParameterChip label="CDS heuristics" active={form.cdsHeuristics} />
-                  <Chip label={`donors: ${form.dssText || DEFAULT_DSS}`} variant="outlined" size="small" />
-                  <Chip label={`acceptors: ${form.assText || DEFAULT_ASS}`} variant="outlined" size="small" />
-                </Stack>
+        <Stack spacing={3.2}>
+          <Paper className="glass-card hero-card" sx={{ p: { xs: 2.4, md: 3.4 } }}>
+            <Stack spacing={2.2}>
+              <Stack
+                direction={{ xs: "column", md: "row" }}
+                justifyContent="space-between"
+                alignItems={{ xs: "flex-start", md: "flex-start" }}
+                spacing={2}
+              >
+                <Box sx={{ maxWidth: 860 }}>
+                  <Typography variant="h3" sx={{ mb: 1 }}>
+                    Gene-level exon–intron metric
+                  </Typography>
+                  <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 840 }}>
+                    Implementation of a metric for biologically rigorous evaluation of exon–intron structure.
+                  </Typography>
+                </Box>
               </Stack>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Paper className="glass-card" sx={{ p: 3 }}>
-                <Stack spacing={1}>
-                  <Typography variant="overline" color="text.secondary">
-                    Current score
-                  </Typography>
-                  <Typography className="metric-value">{scoreLabel}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {result
-                      ? `${result.matched_genes} matched transcript${
-                          result.matched_genes === 1 ? "" : "s"
-                        } out of ${result.total_genes}.`
-                      : "Run the metric to see the exact match rate."}
-                  </Typography>
-                </Stack>
-              </Paper>
-            </Grid>
-          </Grid>
-        </Paper>
 
-        <Grid container spacing={3}>
-          <Grid item xs={12} lg={7}>
-            <Paper className="glass-card" sx={{ p: 3 }}>
-              <Stack spacing={2.25}>
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={1.2}
-                  justifyContent="space-between"
-                  alignItems={{ xs: "stretch", sm: "center" }}
-                >
-                  <Box>
-                    <Typography variant="h5">Playground</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Paste JSON masks and mapping rows, then compute the metric.
-                    </Typography>
-                  </Box>
-                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                    <Button
-                      variant="outlined"
-                      startIcon={<AutoFixHighIcon />}
-                      onClick={() => fillFromExample("simple")}
-                    >
-                      Load simple example
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="secondary"
-                      startIcon={<BiotechIcon />}
-                      onClick={() => fillFromExample("heuristic")}
-                    >
-                      Load CDS / splice example
-                    </Button>
-                  </Stack>
-                </Stack>
-
-                {error && <Alert severity="error">{error}</Alert>}
-
-                <Alert severity="info">
-                  Mapping can be newline-separated or a JSON string array. DNA input can be empty, a
-                  single sequence applied to all rows, multiple newline-separated sequences, or a JSON
-                  string array.
-                </Alert>
-
-                <TextField
-                  className="codeish"
-                  label="Predictions"
-                  placeholder={PREDS_PLACEHOLDER}
-                  value={form.predsText}
-                  onChange={setField("predsText")}
-                  multiline
-                  minRows={7}
-                  fullWidth
-                  helperText="JSON array of arrays with 0/1 values."
-                />
-
-                <TextField
-                  className="codeish"
-                  label="Targets"
-                  placeholder={TARGETS_PLACEHOLDER}
-                  value={form.targetsText}
-                  onChange={setField("targetsText")}
-                  multiline
-                  minRows={7}
-                  fullWidth
-                  helperText="JSON array of arrays with 0/1 values."
-                />
-
-                <TextField
-                  className="codeish"
-                  label="Mapping"
-                  placeholder={MAPPING_PLACEHOLDER}
-                  value={form.mappingText}
-                  onChange={setField("mappingText")}
-                  multiline
-                  minRows={4}
-                  fullWidth
-                  helperText="Format: chrom|gene_type|gene_id|transcript_id|strand|coord"
-                />
-
-                <TextField
-                  className="codeish"
-                  label="DNA sequence(s)"
-                  placeholder={DNA_PLACEHOLDER}
-                  value={form.dnaText}
-                  onChange={setField("dnaText")}
-                  multiline
-                  minRows={4}
-                  fullWidth
-                  helperText="Optional unless splice filter or CDS heuristics is enabled."
-                />
-
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      label="Donor splice motifs"
-                      value={form.dssText}
-                      onChange={setField("dssText")}
-                      fullWidth
-                      helperText="Comma-separated. Example: GT, GC, AT"
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      label="Acceptor splice motifs"
-                      value={form.assText}
-                      onChange={setField("assText")}
-                      fullWidth
-                      helperText="Comma-separated. Example: AG, AC, TG"
-                    />
-                  </Grid>
-                </Grid>
-
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                  <FormControlLabel
-                    control={<Switch checked={form.spliceFilter} onChange={setField("spliceFilter")} />}
-                    label="Enable splice filter"
-                  />
-                  <FormControlLabel
-                    control={
-                      <Switch checked={form.cdsHeuristics} onChange={setField("cdsHeuristics")} />
-                    }
-                    label="Enable CDS heuristics"
-                  />
-                </Stack>
-
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <CalculateIcon />}
-                    onClick={computeMetric}
-                    disabled={loading}
-                  >
-                    {loading ? "Computing..." : "Compute metric"}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="large"
-                    color="inherit"
-                    startIcon={<DeleteSweepIcon />}
-                    onClick={clearAll}
-                  >
-                    Clear all
-                  </Button>
-                </Stack>
+              <Stack direction="row" spacing={1} className="badge-row">
+                <Box className="label-badge label-badge--metric">
+                  <ScienceIcon fontSize="small" />
+                  Metric playground
+                </Box>
+                <Box className="label-badge label-badge--hf">
+                  <span style={{ fontSize: "1.05rem" }}>🤗</span>
+                  Hugging Face API
+                </Box>
               </Stack>
-            </Paper>
-          </Grid>
-
-          <Grid item xs={12} lg={5}>
-            <Stack spacing={3}>
-              <Paper className="glass-card" sx={{ p: 3 }}>
-                <Stack spacing={1.2}>
-                  <Typography variant="h5">How the score is computed</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    The metric extracts contiguous 1-segments from each prediction and target row.
-                    After optional filtering and CDS conversion, a transcript is counted as correct
-                    only when the final predicted segments match the target segments exactly.
-                  </Typography>
-                  <Divider sx={{ my: 1 }} />
-                  <Stack spacing={1}>
-                    <Chip label="Exact set equality after all enabled transforms" sx={{ width: "fit-content" }} />
-                    <Chip
-                      label="First and last exons are always kept in splice filtering"
-                      variant="outlined"
-                      sx={{ width: "fit-content" }}
-                    />
-                    <Chip
-                      label="CDS heuristics search for the longest ORF with M...*"
-                      variant="outlined"
-                      sx={{ width: "fit-content" }}
-                    />
-                  </Stack>
-                </Stack>
-              </Paper>
-
-              <Paper className="glass-card" sx={{ p: 3 }}>
-                <Stack spacing={1.2}>
-                  <Typography variant="h5">Input checklist</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    The API validates lengths, binary values, mapping format, strand values, and DNA
-                    length consistency before computing the score.
-                  </Typography>
-                  <Stack spacing={1}>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <CheckCircleOutlineIcon color="success" fontSize="small" />
-                      <Typography variant="body2">Predictions and targets must have the same number of rows.</Typography>
-                    </Stack>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <CheckCircleOutlineIcon color="success" fontSize="small" />
-                      <Typography variant="body2">Each row must contain only 0 and 1 values.</Typography>
-                    </Stack>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <CheckCircleOutlineIcon color="success" fontSize="small" />
-                      <Typography variant="body2">Each mapping row must contain exactly 6 pipe-separated fields.</Typography>
-                    </Stack>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <CheckCircleOutlineIcon color="success" fontSize="small" />
-                      <Typography variant="body2">DNA is required only when splice filtering or CDS heuristics is enabled.</Typography>
-                    </Stack>
-                  </Stack>
-                </Stack>
-              </Paper>
-
-              <Accordion className="glass-card" defaultExpanded>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <TuneIcon color="primary" />
-                    <Typography variant="h6">Accepted input formats</Typography>
-                  </Stack>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Stack spacing={2}>
-                    <Box>
-                      <Typography variant="subtitle2">Predictions / targets</Typography>
-                      <Typography variant="body2" color="text.secondary" className="mono">
-                        JSON array of arrays, for example [[0,1,1,0],[1,1,0,0]]
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle2">Mapping</Typography>
-                      <Typography variant="body2" color="text.secondary" className="mono">
-                        Either one row per line or a JSON array of strings.
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle2">DNA sequence(s)</Typography>
-                      <Typography variant="body2" color="text.secondary" className="mono">
-                        Empty, one raw sequence for all rows, newline-separated sequences, or a JSON
-                        array of strings.
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </AccordionDetails>
-              </Accordion>
             </Stack>
-          </Grid>
-        </Grid>
+          </Paper>
 
-        {result && (
-          <Stack spacing={3} sx={{ mt: 3 }}>
-            <Paper className="glass-card" sx={{ p: 3 }}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={4}>
-                  <Typography variant="overline" color="text.secondary">
-                    Gene-level score
+          <Grid container spacing={3}>
+            <Grid item xs={12} lg={7}>
+              <Paper className="glass-card" sx={{ p: { xs: 2.2, md: 3 } }}>
+                <Stack spacing={2.4}>
+                  <SectionTitle
+                    icon={<CodeIcon color="primary" />}
+                    title="How to use this metric with Evaluate"
+                    subtitle="Both the Python-like matrix mode and the GFF mode can be loaded through the same Hugging Face metric."
+                  />
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} xl={6}>
+                      <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                        Python-like mode
+                      </Typography>
+                      <CodePanel>{PYTHON_API_SNIPPET}</CodePanel>
+                    </Grid>
+                    <Grid item xs={12} xl={6}>
+                      <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                        GFF mode
+                      </Typography>
+                      <CodePanel>{GFF_API_SNIPPET}</CodePanel>
+                    </Grid>
+                  </Grid>
+                </Stack>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} lg={5}>
+              <Paper className="glass-card metric-description" sx={{ p: { xs: 2.2, md: 3 } }}>
+                <Stack spacing={1.6}>
+                  <SectionTitle
+                    icon={<BiotechIcon color="primary" />}
+                    title="How the metric is computed"
+                  />
+                  <Typography color="text.secondary">
+                    The metric compares exact interval reconstruction, not per-base overlap. For every
+                    transcript, contiguous runs of ones are converted into half-open segments such as
+                    <span className="mono"> [1, 3)</span>. A segment is counted as correct only when the
+                    predicted segment set and the target segment set are exactly equal for the selected
+                    segment type.
                   </Typography>
-                  <Typography className="metric-value">{scoreLabel}</Typography>
+                  <Typography color="text.secondary">
+                    Two input modes are supported. In Python-like mode, each transcript is represented by
+                    a binary matrix with shape <span className="mono">(transcript length, number of segments)</span>.
+                    Each column corresponds to one selected segment from the
+                    <span className="mono"> segments </span> argument. In GFF mode, the metric extracts
+                    exon and CDS intervals from the uploaded annotations and performs the same exact-set comparison.
+                  </Typography>
+                  <Typography color="text.secondary">
+                    The output is grouped by the selected <span className="mono">stratifier</span>. This
+                    means you can count exact matches per transcript type, transcript id, gene id,
+                    chromosome, or strand. The implementation accepts the aliases
+                    <span className="mono"> type / transcript_type</span>,
+                    <span className="mono"> transcript / transcript_id</span>, and
+                    <span className="mono"> gene / gene_id</span>.
+                  </Typography>
+                  <Typography color="text.secondary">
+                    This implementation has no splice-site filtering and no CDS heuristics. It is intended
+                    to reproduce exact exon and CDS interval comparison from the updated benchmark logic.
+                  </Typography>
+                </Stack>
+              </Paper>
+            </Grid>
+          </Grid>
+
+          <Paper className="glass-card section-anchor" sx={{ p: { xs: 2.2, md: 3 } }}>
+            <Stack spacing={2.2}>
+              <SectionTitle
+                icon={<ScienceIcon color="primary" />}
+                title="Accepted input format"
+                subtitle="These requirements are static and always apply."
+              />
+
+              <Divider />
+
+              <Grid container spacing={3}>
+                <Grid item xs={12} xl={6}>
+                  <Typography variant="h6" sx={{ mb: 1.2 }}>
+                    Python-like mode
+                  </Typography>
+                  <Stack spacing={1.1}>
+                    <Typography color="text.secondary">
+                      <span className="mono">preds</span> and <span className="mono">targets</span> must be lists of
+                      transcript arrays. Each transcript array must be binary and 2D:
+                      <span className="mono"> (transcript_length, number_of_selected_segments)</span>.
+                    </Typography>
+                    <Typography color="text.secondary">
+                      The selected segments define the column order. For example, with
+                      <span className="mono"> segments=["exon", "CDS"] </span>
+                      column 0 is exon and column 1 is CDS.
+                    </Typography>
+                    <Typography color="text.secondary">
+                      Each mapping row must have seven fields:
+                      <span className="mono"> transcript_id|gene_id|transcript_type|strand|genome|chrom|coord</span>.
+                    </Typography>
+                    <Typography color="text.secondary">
+                      Allowed transcript types:
+                      <span className="mono"> mRNA</span> and <span className="mono">lnc_RNA</span>.
+                      Allowed segments:
+                      <span className="mono"> exon</span> and <span className="mono">CDS</span>.
+                    </Typography>
+                  </Stack>
+                  <Box sx={{ mt: 1.4 }}>
+                    <CodePanel>{`preds = [
+  [
+    [0, 0],
+    [1, 0],
+    [1, 1],
+    [0, 0]
+  ]
+]
+
+mapping = [
+  "TX0001|GENE0001|mRNA|+|GRCh38|chr1|1-4"
+]`}</CodePanel>
+                  </Box>
                 </Grid>
-                <Grid item xs={12} md={4}>
-                  <Typography variant="overline" color="text.secondary">
-                    Matched transcripts
+
+                <Grid item xs={12} xl={6}>
+                  <Typography variant="h6" sx={{ mb: 1.2 }}>
+                    GFF mode
                   </Typography>
-                  <Typography variant="h4">{result.matched_genes}</Typography>
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <Typography variant="overline" color="text.secondary">
-                    Total transcripts
-                  </Typography>
-                  <Typography variant="h4">{result.total_genes}</Typography>
+                  <Stack spacing={1.1}>
+                    <Typography color="text.secondary">
+                      The reference GFF must contain gene rows with <span className="mono">ID</span>,
+                      transcript rows of type <span className="mono">mRNA</span> and/or
+                      <span className="mono"> lnc_RNA</span> with
+                      <span className="mono"> ID</span> and <span className="mono">Parent</span>,
+                      and exon/CDS rows with <span className="mono">Parent=&lt;transcript_id&gt;</span>.
+                    </Typography>
+                    <Typography color="text.secondary">
+                      In this implementation, the prediction GFF uses
+                      <span className="mono"> seqid = transcript_id</span>, and exon/CDS coordinates are
+                      interpreted in transcript-relative coordinates.
+                    </Typography>
+                    <Typography color="text.secondary">
+                      Only the selected transcript types and segment types are scored. The same
+                      <span className="mono"> stratifier</span>, <span className="mono">types</span>, and
+                      <span className="mono"> segments</span> arguments are shared with Python-like mode.
+                    </Typography>
+                    <Typography color="text.secondary">
+                      Uploaded GFF files are read in memory only and are not stored after computation.
+                    </Typography>
+                  </Stack>
                 </Grid>
               </Grid>
-            </Paper>
+            </Stack>
+          </Paper>
 
-            <Paper className="glass-card" sx={{ p: 3 }}>
-              <Stack spacing={2}>
-                <Typography variant="h5">Per-transcript details</Typography>
-                <TableContainer>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Transcript</TableCell>
-                        <TableCell>Gene</TableCell>
-                        <TableCell>Type / strand</TableCell>
-                        <TableCell>Raw predicted segments</TableCell>
-                        <TableCell>Final predicted segments</TableCell>
-                        <TableCell>Target segments</TableCell>
-                        <TableCell align="center">Match</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {result.details.map((row) => (
-                        <TableRow key={`${row.index}-${row.transcript_id}`} hover>
-                          <TableCell>
-                            <Stack spacing={0.35}>
-                              <Typography variant="body2" fontWeight={700}>
-                                {row.transcript_id}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {row.chrom}:{row.coord}
-                              </Typography>
-                            </Stack>
-                          </TableCell>
-                          <TableCell>{row.gene_id}</TableCell>
-                          <TableCell>{`${row.gene_type} / ${row.strand}`}</TableCell>
-                          <TableCell className="mono">{segmentListToString(row.raw_pred_segments)}</TableCell>
-                          <TableCell className="mono">{segmentListToString(row.final_pred_segments)}</TableCell>
-                          <TableCell className="mono">{segmentListToString(row.target_segments)}</TableCell>
-                          <TableCell align="center">
-                            <Chip
-                              label={row.match ? "match" : "mismatch"}
-                              color={row.match ? "success" : "error"}
-                              size="small"
-                            />
-                          </TableCell>
+          <Paper className="glass-card" sx={{ p: { xs: 2.2, md: 3 } }}>
+            <Stack spacing={2.4}>
+              <SectionTitle
+                icon={<CalculateIcon color="primary" />}
+                title="Playground"
+                subtitle="Choose the input mode, provide the required fields, and run the metric."
+              />
+
+              <Tabs
+                value={tab}
+                onChange={(_, value) => {
+                  setTab(value);
+                  setResult(null);
+                  setError("");
+                }}
+              >
+                <Tab value="python" label="Python-like input" />
+                <Tab value="gff" label="GFF input" />
+              </Tabs>
+
+              {tab === "python" ? (
+                <Stack spacing={2.2}>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={4}>
+                      <Typography variant="subtitle2" sx={{ mb: 0.8 }}>
+                        Stratifier
+                      </Typography>
+                      <Select fullWidth value={pythonForm.stratifier} onChange={setPythonField("stratifier")}>
+                        {STRATIFIERS.map((item) => (
+                          <MenuItem key={item.value} value={item.value}>
+                            {item.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <Typography variant="subtitle2" sx={{ mb: 0.8 }}>
+                        Transcript types
+                      </Typography>
+                      <FormGroup row>
+                        {TYPE_OPTIONS.map((option) => (
+                          <FormControlLabel
+                            key={option.value}
+                            control={
+                              <Switch
+                                checked={pythonForm.types.includes(option.value)}
+                                onChange={toggleArrayValue("python", "types", option.value)}
+                              />
+                            }
+                            label={option.label}
+                          />
+                        ))}
+                      </FormGroup>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <Typography variant="subtitle2" sx={{ mb: 0.8 }}>
+                        Segments
+                      </Typography>
+                      <FormGroup row>
+                        {SEGMENT_OPTIONS.map((option) => (
+                          <FormControlLabel
+                            key={option.value}
+                            control={
+                              <Switch
+                                checked={pythonForm.segments.includes(option.value)}
+                                onChange={toggleArrayValue("python", "segments", option.value)}
+                              />
+                            }
+                            label={option.label}
+                          />
+                        ))}
+                      </FormGroup>
+                    </Grid>
+                  </Grid>
+
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} xl={6}>
+                      <TextField
+                        label="preds"
+                        fullWidth
+                        multiline
+                        minRows={14}
+                        className="codeish"
+                        placeholder={PYTHON_PREDS_PLACEHOLDER}
+                        value={pythonForm.predsText}
+                        onChange={setPythonField("predsText")}
+                      />
+                    </Grid>
+                    <Grid item xs={12} xl={6}>
+                      <TextField
+                        label="targets"
+                        fullWidth
+                        multiline
+                        minRows={14}
+                        className="codeish"
+                        placeholder={PYTHON_TARGETS_PLACEHOLDER}
+                        value={pythonForm.targetsText}
+                        onChange={setPythonField("targetsText")}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        label="mapping"
+                        fullWidth
+                        multiline
+                        minRows={4}
+                        className="codeish"
+                        placeholder={MAPPING_PLACEHOLDER}
+                        value={pythonForm.mappingText}
+                        onChange={setPythonField("mappingText")}
+                      />
+                    </Grid>
+                  </Grid>
+
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
+                    <Button variant="contained" startIcon={<CalculateIcon />} onClick={computePython} disabled={loading}>
+                      Compute metric
+                    </Button>
+                    <Button variant="outlined" startIcon={<ScienceIcon />} onClick={fillPythonExample} disabled={loading}>
+                      Paste example
+                    </Button>
+                    <Button variant="outlined" startIcon={<DeleteSweepIcon />} onClick={clearAll} disabled={loading}>
+                      Clear all
+                    </Button>
+                  </Stack>
+                </Stack>
+              ) : (
+                <Stack spacing={2.2}>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={4}>
+                      <Typography variant="subtitle2" sx={{ mb: 0.8 }}>
+                        Stratifier
+                      </Typography>
+                      <Select fullWidth value={gffForm.stratifier} onChange={setGffField("stratifier")}>
+                        {STRATIFIERS.map((item) => (
+                          <MenuItem key={item.value} value={item.value}>
+                            {item.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <Typography variant="subtitle2" sx={{ mb: 0.8 }}>
+                        Transcript types
+                      </Typography>
+                      <FormGroup row>
+                        {TYPE_OPTIONS.map((option) => (
+                          <FormControlLabel
+                            key={option.value}
+                            control={
+                              <Switch
+                                checked={gffForm.types.includes(option.value)}
+                                onChange={toggleArrayValue("gff", "types", option.value)}
+                              />
+                            }
+                            label={option.label}
+                          />
+                        ))}
+                      </FormGroup>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <Typography variant="subtitle2" sx={{ mb: 0.8 }}>
+                        Segments
+                      </Typography>
+                      <FormGroup row>
+                        {SEGMENT_OPTIONS.map((option) => (
+                          <FormControlLabel
+                            key={option.value}
+                            control={
+                              <Switch
+                                checked={gffForm.segments.includes(option.value)}
+                                onChange={toggleArrayValue("gff", "segments", option.value)}
+                              />
+                            }
+                            label={option.label}
+                          />
+                        ))}
+                      </FormGroup>
+                    </Grid>
+                  </Grid>
+
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={6}>
+                      <Button component="label" fullWidth variant="outlined" startIcon={<UploadFileIcon />}>
+                        {gffForm.predFileName || "Choose prediction GFF"}
+                        <input hidden type="file" accept=".gff,.gff3,.txt" onChange={handleFilePick("predFile")} />
+                      </Button>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <Button component="label" fullWidth variant="outlined" startIcon={<UploadFileIcon />}>
+                        {gffForm.trueFileName || "Choose reference GFF"}
+                        <input hidden type="file" accept=".gff,.gff3,.txt" onChange={handleFilePick("trueFile")} />
+                      </Button>
+                    </Grid>
+                  </Grid>
+
+                  <Typography className="file-note">
+                    Files are read in memory for one computation request and then cleared from the form.
+                  </Typography>
+
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
+                    <Button variant="contained" startIcon={<CalculateIcon />} onClick={computeGff} disabled={loading}>
+                      Compute metric
+                    </Button>
+                    <Button variant="outlined" startIcon={<DeleteSweepIcon />} onClick={clearAll} disabled={loading}>
+                      Clear all
+                    </Button>
+                  </Stack>
+                </Stack>
+              )}
+
+              {loading ? (
+                <Stack direction="row" spacing={1.2} alignItems="center">
+                  <CircularProgress size={22} />
+                  <Typography>Computing the metric…</Typography>
+                </Stack>
+              ) : null}
+
+              {error ? <Alert severity="error">{error}</Alert> : null}
+            </Stack>
+          </Paper>
+
+          {result ? (
+            <>
+              <Paper className="glass-card" sx={{ p: { xs: 2.2, md: 3 } }}>
+                <Stack spacing={2.2}>
+                  <SectionTitle
+                    icon={<BiotechIcon color="primary" />}
+                    title="Metric result"
+                    subtitle={`Mode: ${result.mode}. Stratifier: ${result.stratifier}.`}
+                  />
+
+                  <Box className="summary-grid">
+                    <SummaryCard label="Categories" value={result.n_categories} />
+                    <SummaryCard label="Transcripts inspected" value={result.n_transcripts} />
+                    {Object.entries(segmentTotals).map(([segment, value]) => (
+                      <SummaryCard key={segment} label={`Total ${segment} matches`} value={value} />
+                    ))}
+                  </Box>
+
+                  <TableContainer>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Category</TableCell>
+                          {result.segments.map((segment) => (
+                            <TableCell key={segment}>{segment}</TableCell>
+                          ))}
+                          <TableCell>Total</TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Stack>
-            </Paper>
+                      </TableHead>
+                      <TableBody>
+                        {result.rows.map((row) => (
+                          <TableRow key={row.category}>
+                            <TableCell>{row.category}</TableCell>
+                            {result.segments.map((segment) => (
+                              <TableCell key={`${row.category}-${segment}`}>{row.values[segment]}</TableCell>
+                            ))}
+                            <TableCell>{row.total}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
 
-            <Accordion className="glass-card">
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="h6">Raw API output</Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <TextField
-                  className="codeish"
-                  value={prettyJson(result)}
-                  multiline
-                  minRows={12}
-                  fullWidth
-                  InputProps={{ readOnly: true }}
-                />
-              </AccordionDetails>
-            </Accordion>
-          </Stack>
-        )}
+                  <Typography variant="subtitle1">Raw result</Typography>
+                  <CodePanel>{prettyJson(result.raw_result)}</CodePanel>
+                </Stack>
+              </Paper>
 
-        <Box sx={{ py: 3 }}>
-          <Typography variant="body2" color="text.secondary" align="center">
-            Styled to visually match the green/teal bio-themed GENATATOR leaderboard aesthetic,
-            while focusing on a single interactive metric page.
-          </Typography>
-        </Box>
+              <Paper className="glass-card" sx={{ p: { xs: 2.2, md: 3 } }}>
+                <Stack spacing={2.2}>
+                  <SectionTitle
+                    icon={<BiotechIcon color="primary" />}
+                    title="Per-transcript details"
+                    subtitle="Segment lists are shown inside horizontally scrollable cells so long interval sets do not break the layout."
+                  />
+                  <DetailTable details={result.details} segments={activeSegments} />
+                </Stack>
+              </Paper>
+            </>
+          ) : null}
+        </Stack>
       </Container>
     </Box>
   );

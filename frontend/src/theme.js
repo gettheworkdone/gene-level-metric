@@ -12,16 +12,16 @@ export function buildTheme() {
       info: { main: "#0284c7" },
       background: {
         default: "#f3fbf8",
-        paper: "rgba(255,255,255,0.84)",
+        paper: "rgba(255,255,255,0.84)"
       },
       text: {
         primary: "#0b1f1a",
-        secondary: "rgba(11,31,26,0.72)",
+        secondary: "rgba(11,31,26,0.72)"
       },
-      divider: "rgba(15,118,110,0.18)",
+      divider: "rgba(15,118,110,0.18)"
     },
     shape: {
-      borderRadius: 18,
+      borderRadius: 18
     },
     typography: {
       fontFamily:
@@ -30,7 +30,7 @@ export function buildTheme() {
       h4: { fontWeight: 820, letterSpacing: -0.4 },
       h5: { fontWeight: 760 },
       h6: { fontWeight: 740 },
-      button: { textTransform: "none", fontWeight: 760 },
+      button: { textTransform: "none", fontWeight: 760 }
     },
     components: {
       MuiAppBar: {
@@ -40,41 +40,41 @@ export function buildTheme() {
             background: "rgba(255,255,255,0.72)",
             backdropFilter: "blur(12px)",
             borderBottom: "1px solid rgba(15,118,110,0.14)",
-            boxShadow: "none",
-          },
-        },
+            boxShadow: "none"
+          }
+        }
       },
       MuiPaper: {
         styleOverrides: {
           root: {
             backgroundImage: "none",
             border: "1px solid rgba(15,118,110,0.14)",
-            boxShadow: "0 10px 30px rgba(2, 44, 34, 0.08)",
-          },
-        },
+            boxShadow: "0 10px 30px rgba(2, 44, 34, 0.08)"
+          }
+        }
       },
       MuiButton: {
         styleOverrides: {
           root: {
-            borderRadius: 14,
-          },
-        },
+            borderRadius: 14
+          }
+        }
       },
       MuiChip: {
         styleOverrides: {
           root: {
-            borderRadius: 12,
-          },
-        },
+            borderRadius: 12
+          }
+        }
       },
       MuiOutlinedInput: {
         styleOverrides: {
           root: {
             background: "rgba(255,255,255,0.66)",
-            backdropFilter: "blur(10px)",
-          },
-        },
-      },
-    },
+            backdropFilter: "blur(10px)"
+          }
+        }
+      }
+    }
   });
 }

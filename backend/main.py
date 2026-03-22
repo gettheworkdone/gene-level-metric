@@ -9,23 +9,24 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from backend.metric import (
-    DEFAULT_ASS,
-    DEFAULT_DSS,
-    EXAMPLE_PAYLOADS,
-    gene_level_metric,
-)
+from gene_level_core import DEFAULT_SEGMENTS, DEFAULT_TYPES, PYTHON_EXAMPLE, compute_gff_metric, compute_python_metric
 
 
-class ComputeRequest(BaseModel):
-    preds: list[list[int]]
-    targets: list[list[int]]
+class PythonComputeRequest(BaseModel):
+    preds: list[list[list[int]]]
+    targets: list[list[list[int]]]
     mapping: list[str]
-    dna_sequences: str | list[str] | None = ""
-    cds_heuristics: bool = False
-    splice_filter: bool = False
-    dss: list[str] = Field(default_factory=lambda: DEFAULT_DSS.copy())
-    ass: list[str] = Field(default_factory=lambda: DEFAULT_ASS.copy())
+    stratifier: str = "type"
+    types: list[str] = Field(default_factory=lambda: DEFAULT_TYPES.copy())
+    segments: list[str] = Field(default_factory=lambda: DEFAULT_SEGMENTS.copy())
+
+
+class GffComputeRequest(BaseModel):
+    pred_gff_text: str
+    true_gff_text: str
+    stratifier: str = "type"
+    types: list[str] = Field(default_factory=lambda: DEFAULT_TYPES.copy())
+    segments: list[str] = Field(default_factory=lambda: DEFAULT_SEGMENTS.copy())
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -50,25 +51,39 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.get("/api/example")
-def example() -> dict[str, Any]:
-    return EXAMPLE_PAYLOADS
+@app.get("/api/example/python")
+def python_example() -> dict[str, Any]:
+    return PYTHON_EXAMPLE
 
 
-@app.post("/api/compute")
-def compute(payload: ComputeRequest) -> dict[str, Any]:
+@app.post("/api/compute/python")
+def compute_python(payload: PythonComputeRequest) -> dict[str, Any]:
     try:
-        return gene_level_metric(
+        return compute_python_metric(
             preds=payload.preds,
             targets=payload.targets,
             mapping=payload.mapping,
-            dna_sequences=payload.dna_sequences,
-            cds_heuristics=payload.cds_heuristics,
-            splice_filter=payload.splice_filter,
-            dss=payload.dss,
-            ass=payload.ass,
+            stratifier=payload.stratifier,
+            types=payload.types,
+            segments=payload.segments,
         )
-    except ValueError as exc:
+    except (ValueError, KeyError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # pragma: no cover
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {exc}") from exc
+
+
+@app.post("/api/compute/gff")
+def compute_gff(payload: GffComputeRequest) -> dict[str, Any]:
+    try:
+        return compute_gff_metric(
+            pred_gff=payload.pred_gff_text,
+            true_gff=payload.true_gff_text,
+            stratifier=payload.stratifier,
+            types=payload.types,
+            segments=payload.segments,
+        )
+    except (ValueError, KeyError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:  # pragma: no cover
         raise HTTPException(status_code=500, detail=f"Unexpected error: {exc}") from exc
@@ -83,8 +98,9 @@ def root() -> Response:
         {
             "message": "Frontend build was not found. Build the frontend or run through Docker.",
             "health": "/api/health",
-            "example": "/api/example",
-            "compute": "/api/compute",
+            "example": "/api/example/python",
+            "compute_python": "/api/compute/python",
+            "compute_gff": "/api/compute/gff",
         }
     )
 
@@ -103,8 +119,6 @@ def spa_fallback(full_path: str) -> Response:
         return FileResponse(index_file)
 
     return JSONResponse(
-        {
-            "message": "Frontend build was not found. Build the frontend or run through Docker.",
-        },
+        {"message": "Frontend build was not found. Build the frontend or run through Docker."},
         status_code=503,
     )
