@@ -126,9 +126,45 @@ class GeneLevelMetric(evaluate.Metric):
             stratifier=stratifier,
             types=types,
             segments=segments,
-        )
+        )["raw_result"]
 
     def compute_gene_level_gff(
+        self,
+        pred_gff,
+        true_gff,
+        stratifier="type",
+        types=DEFAULT_TYPES,
+        segments=DEFAULT_SEGMENTS,
+    ):
+        """Compute the gene-level metric from GFF inputs."""
+        return compute_gff_metric(
+            pred_gff=pred_gff,
+            true_gff=true_gff,
+            stratifier=stratifier,
+            types=types,
+            segments=segments,
+        )["raw_result"]
+
+    def _run_gene_level_python_full(
+        self,
+        preds,
+        targets,
+        mapping,
+        stratifier="type",
+        types=DEFAULT_TYPES,
+        segments=DEFAULT_SEGMENTS,
+    ):
+        """Compute the gene-level metric from transcript-wise binary matrices."""
+        return compute_python_metric(
+            preds=preds,
+            targets=targets,
+            mapping=mapping,
+            stratifier=stratifier,
+            types=types,
+            segments=segments,
+        )
+
+    def _run_gene_level_gff_full(
         self,
         pred_gff,
         true_gff,

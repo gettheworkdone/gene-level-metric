@@ -62,7 +62,7 @@ def python_example() -> dict[str, Any]:
 @app.post("/api/compute/python")
 def compute_python(payload: PythonComputeRequest) -> dict[str, Any]:
     try:
-        return METRIC.compute_gene_level_python(
+        return METRIC._run_gene_level_python_full(
             preds=payload.preds,
             targets=payload.targets,
             mapping=payload.mapping,
@@ -79,7 +79,7 @@ def compute_python(payload: PythonComputeRequest) -> dict[str, Any]:
 @app.post("/api/compute/gff")
 def compute_gff(payload: GffComputeRequest) -> dict[str, Any]:
     try:
-        return METRIC.compute_gene_level_gff(
+        return METRIC._run_gene_level_gff_full(
             pred_gff=payload.pred_gff_text,
             true_gff=payload.true_gff_text,
             stratifier=payload.stratifier,
