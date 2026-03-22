@@ -80,6 +80,20 @@ body::after {
   pointer-events: none;
 }
 
+.top-two-column-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  align-items: stretch;
+  width: 100%;
+}
+
+@media (max-width: 1199px) {
+  .top-two-column-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .metric-value {
   font-size: clamp(2.2rem, 4vw, 3.8rem);
   line-height: 1;
@@ -172,11 +186,6 @@ body::after {
   border-radius: 16px;
   border: 1px solid rgba(15, 118, 110, 0.14);
   background: rgba(255, 255, 255, 0.68);
-}
-
-.file-note {
-  color: rgba(11, 31, 26, 0.72);
-  font-size: 0.92rem;
 }
 
 .result-table-wrap {

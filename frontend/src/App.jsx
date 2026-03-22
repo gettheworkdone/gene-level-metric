@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   Alert,
   AppBar,
@@ -253,11 +253,11 @@ function MatchChip({ value }) {
   return <Chip size="small" label="mismatch" color="error" />;
 }
 
-function SectionTitle({ icon, title, subtitle }) {
+function SectionTitle({ icon = null, title, subtitle }) {
   return (
     <Stack spacing={1.1}>
       <Stack direction="row" alignItems="center" spacing={1}>
-        {icon}
+        {icon ? icon : null}
         <Typography variant="h5">{title}</Typography>
       </Stack>
       {subtitle ? (
@@ -352,6 +352,8 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const predFileInputRef = useRef(null);
+  const trueFileInputRef = useRef(null);
 
   const segmentTotals = useMemo(() => {
     return result?.totals_by_segment || {};
@@ -363,6 +365,15 @@ export default function App() {
 
   const setGffField = (key) => (event) => {
     setGffForm((current) => ({ ...current, [key]: event.target.value }));
+  };
+
+  const clearGffInputs = () => {
+    if (predFileInputRef.current) {
+      predFileInputRef.current.value = "";
+    }
+    if (trueFileInputRef.current) {
+      trueFileInputRef.current.value = "";
+    }
   };
 
   const toggleArrayValue = (scope, key, value) => (event) => {
@@ -418,6 +429,7 @@ export default function App() {
     setError("");
     setPythonForm(EMPTY_PYTHON_FORM);
     setGffForm(EMPTY_GFF_FORM);
+    clearGffInputs();
   };
 
   const computePython = async () => {
@@ -495,7 +507,10 @@ export default function App() {
         ...current,
         predFile: null,
         trueFile: null,
+        predFileName: "",
+        trueFileName: "",
       }));
+      clearGffInputs();
     } catch (err) {
       setError(err.message || "Computation failed.");
     } finally {
@@ -509,7 +524,6 @@ export default function App() {
     <Box>
       <AppBar position="sticky">
         <Toolbar>
-          <BiotechIcon sx={{ mr: 1.2 }} />
           <Typography variant="h6">Gene-level Metric</Typography>
         </Toolbar>
       </AppBar>
@@ -547,75 +561,63 @@ export default function App() {
             </Stack>
           </Paper>
 
-          <Grid container spacing={3}>
-            <Grid item xs={12} lg={7}>
-              <Paper className="glass-card" sx={{ p: { xs: 2.2, md: 3 } }}>
-                <Stack spacing={2.4}>
-                  <SectionTitle
-                    icon={<CodeIcon color="primary" />}
-                    title="How to use this metric with Evaluate"
-                    subtitle="Both the Python-like matrix mode and the GFF mode can be loaded through the same Hugging Face metric."
-                  />
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} xl={6}>
-                      <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                        Python-like mode
-                      </Typography>
-                      <CodePanel>{PYTHON_API_SNIPPET}</CodePanel>
-                    </Grid>
-                    <Grid item xs={12} xl={6}>
-                      <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                        GFF mode
-                      </Typography>
-                      <CodePanel>{GFF_API_SNIPPET}</CodePanel>
-                    </Grid>
+          <Box className="top-two-column-grid">
+            <Paper className="glass-card" sx={{ p: { xs: 2.2, md: 3 } }}>
+              <Stack spacing={2.4}>
+                <SectionTitle
+                  icon={<CodeIcon color="primary" />}
+                  title="How to use this metric with Evaluate"
+                  subtitle="Both the Python-like matrix mode and the GFF mode can be loaded through the same Hugging Face metric."
+                />
+                <Grid container spacing={2}>
+                  <Grid item xs={12} xl={6}>
+                    <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                      Python-like mode
+                    </Typography>
+                    <CodePanel>{PYTHON_API_SNIPPET}</CodePanel>
                   </Grid>
-                </Stack>
-              </Paper>
-            </Grid>
+                  <Grid item xs={12} xl={6}>
+                    <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                      GFF mode
+                    </Typography>
+                    <CodePanel>{GFF_API_SNIPPET}</CodePanel>
+                  </Grid>
+                </Grid>
+              </Stack>
+            </Paper>
 
-            <Grid item xs={12} lg={5}>
-              <Paper className="glass-card metric-description" sx={{ p: { xs: 2.2, md: 3 } }}>
-                <Stack spacing={1.6}>
-                  <SectionTitle
-                    icon={<BiotechIcon color="primary" />}
-                    title="How the metric is computed"
-                  />
-                  <Typography color="text.secondary">
-                    The metric compares exact interval reconstruction, not per-base overlap. For every
-                    transcript, contiguous runs of ones are converted into half-open segments such as
-                    <span className="mono"> [1, 3)</span>. A segment is counted as correct only when the
-                    predicted segment set and the target segment set are exactly equal for the selected
-                    segment type.
-                  </Typography>
-                  <Typography color="text.secondary">
-                    Two input modes are supported. In Python-like mode, each transcript is represented by
-                    a binary matrix with shape <span className="mono">(transcript length, number of segments)</span>.
-                    Each column corresponds to one selected segment from the
-                    <span className="mono"> segments </span> argument. In GFF mode, the metric extracts
-                    exon and CDS intervals from the uploaded annotations and performs the same exact-set comparison.
-                  </Typography>
-                  <Typography color="text.secondary">
-                    The output is grouped by the selected <span className="mono">stratifier</span>. This
-                    means you can count exact matches per transcript type, transcript id, gene id,
-                    chromosome, or strand. The implementation accepts the aliases
-                    <span className="mono"> type / transcript_type</span>,
-                    <span className="mono"> transcript / transcript_id</span>, and
-                    <span className="mono"> gene / gene_id</span>.
-                  </Typography>
-                  <Typography color="text.secondary">
-                    This implementation has no splice-site filtering and no CDS heuristics. It is intended
-                    to reproduce exact exon and CDS interval comparison from the updated benchmark logic.
-                  </Typography>
-                </Stack>
-              </Paper>
-            </Grid>
-          </Grid>
+            <Paper className="glass-card metric-description" sx={{ p: { xs: 2.2, md: 3 } }}>
+              <Stack spacing={1.6}>
+                <SectionTitle title="How the metric is computed" />
+                <Typography color="text.secondary">
+                  The metric compares exact interval reconstruction, not per-base overlap. For every
+                  transcript, contiguous runs of ones are converted into half-open segments such as
+                  <span className="mono"> [1, 3)</span>. A segment is counted as correct only when the
+                  predicted segment set and the target segment set are exactly equal for the selected
+                  segment type.
+                </Typography>
+                <Typography color="text.secondary">
+                  Two input modes are supported. In Python-like mode, each transcript is represented by
+                  a binary matrix with shape <span className="mono">(transcript length, number of segments)</span>.
+                  Each column corresponds to one selected segment from the
+                  <span className="mono"> segments </span> argument. In GFF mode, the metric extracts
+                  exon and CDS intervals from the uploaded annotations and performs the same exact-set comparison.
+                </Typography>
+                <Typography color="text.secondary">
+                  The output is grouped by the selected <span className="mono">stratifier</span>. This
+                  means you can count exact matches per transcript type, transcript id, gene id,
+                  chromosome, or strand. The implementation accepts the aliases
+                  <span className="mono"> type / transcript_type</span>,
+                  <span className="mono"> transcript / transcript_id</span>, and
+                  <span className="mono"> gene / gene_id</span>.
+                </Typography>
+              </Stack>
+            </Paper>
+          </Box>
 
           <Paper className="glass-card section-anchor" sx={{ p: { xs: 2.2, md: 3 } }}>
             <Stack spacing={2.2}>
               <SectionTitle
-                icon={<ScienceIcon color="primary" />}
                 title="Accepted input format"
                 subtitle="These requirements are static and always apply."
               />
@@ -686,9 +688,6 @@ mapping = [
                       Only the selected transcript types and segment types are scored. The same
                       <span className="mono"> stratifier</span>, <span className="mono">types</span>, and
                       <span className="mono"> segments</span> arguments are shared with Python-like mode.
-                    </Typography>
-                    <Typography color="text.secondary">
-                      Uploaded GFF files are read in memory only and are not stored after computation.
                     </Typography>
                   </Stack>
                 </Grid>
@@ -881,20 +880,16 @@ mapping = [
                     <Grid item xs={12} md={6}>
                       <Button component="label" fullWidth variant="outlined" startIcon={<UploadFileIcon />}>
                         {gffForm.predFileName || "Choose prediction GFF"}
-                        <input hidden type="file" accept=".gff,.gff3,.txt" onChange={handleFilePick("predFile")} />
+                        <input ref={predFileInputRef} hidden type="file" accept=".gff,.gff3,.txt" onChange={handleFilePick("predFile")} />
                       </Button>
                     </Grid>
                     <Grid item xs={12} md={6}>
                       <Button component="label" fullWidth variant="outlined" startIcon={<UploadFileIcon />}>
                         {gffForm.trueFileName || "Choose reference GFF"}
-                        <input hidden type="file" accept=".gff,.gff3,.txt" onChange={handleFilePick("trueFile")} />
+                        <input ref={trueFileInputRef} hidden type="file" accept=".gff,.gff3,.txt" onChange={handleFilePick("trueFile")} />
                       </Button>
                     </Grid>
                   </Grid>
-
-                  <Typography className="file-note">
-                    Files are read in memory for one computation request and then cleared from the form.
-                  </Typography>
 
                   <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
                     <Button variant="contained" startIcon={<CalculateIcon />} onClick={computeGff} disabled={loading}>
