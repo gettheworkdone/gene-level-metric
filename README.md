@@ -17,7 +17,7 @@ tags:
 
 # Gene-level Metric
 
-This repository contains a Hugging Face Space and an Evaluate-compatible metric for biologically rigorous assessment of exon–intron structure.
+This repository contains a Hugging Face Space and an Evaluate-compatible metric for biologically rigorous assessment of exon–intron structure. Load it once with `evaluate.load("shmelev/gene-level-metric")`, then call either `compute_gene_level_python(...)` or `compute_gene_level_gff(...)`.
 
 ## Two supported modes
 
@@ -48,7 +48,7 @@ import evaluate
 
 metric = evaluate.load("shmelev/gene-level-metric")
 
-result = metric.compute(
+result = metric.compute_gene_level_python(
     preds=[
         [
             [0, 0],
@@ -112,7 +112,7 @@ import evaluate
 
 metric = evaluate.load("shmelev/gene-level-metric")
 
-result = metric.compute(
+result = metric.compute_gene_level_gff(
     pred_gff="predictions.gff",
     true_gff="reference.gff",
     stratifier="type",

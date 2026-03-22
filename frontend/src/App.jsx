@@ -52,7 +52,7 @@ const PYTHON_API_SNIPPET = `import evaluate
 
 metric = evaluate.load("shmelev/gene-level-metric")
 
-result = metric.compute(
+result = metric.compute_gene_level_python(
     preds=[
         [
             [0, 0],
@@ -91,7 +91,7 @@ const GFF_API_SNIPPET = `import evaluate
 
 metric = evaluate.load("shmelev/gene-level-metric")
 
-result = metric.compute(
+result = metric.compute_gene_level_gff(
     pred_gff="predictions.gff",
     true_gff="reference.gff",
     stratifier="type",
@@ -210,9 +210,10 @@ function segmentListToString(segments) {
   return segments.map(([start, end]) => `[${start}, ${end})`).join(", ");
 }
 
-function CodePanel({ children }) {
+function CodePanel({ children, compact = false }) {
+  const classes = compact ? "code-panel code-panel--compact mono" : "code-panel mono";
   return (
-    <Box component="pre" className="code-panel mono">
+    <Box component="pre" className={classes}>
       {children}
     </Box>
   );
@@ -225,6 +226,10 @@ function SegmentScrollBox({ segments }) {
       {value}
     </Box>
   );
+}
+
+function HeaderBadge({ children }) {
+  return <Box component="span" className="details-header-badge">{children}</Box>;
 }
 
 function MatchChip({ value }) {
@@ -278,15 +283,15 @@ function DetailTable({ details, segments }) {
       <Table className="metric-table details-table">
         <TableHead>
           <TableRow>
-            <TableCell>Transcript</TableCell>
-            <TableCell>Gene</TableCell>
-            <TableCell>Type / strand</TableCell>
-            <TableCell>Coordinate / length</TableCell>
+            <TableCell><HeaderBadge>Transcript</HeaderBadge></TableCell>
+            <TableCell><HeaderBadge>Gene</HeaderBadge></TableCell>
+            <TableCell><HeaderBadge>Type / strand</HeaderBadge></TableCell>
+            <TableCell><HeaderBadge>Coordinate / length</HeaderBadge></TableCell>
             {segments.map((segment) => (
               <React.Fragment key={segment}>
-                <TableCell className="segment-column">{segment} predicted</TableCell>
-                <TableCell className="segment-column">{segment} target</TableCell>
-                <TableCell>{segment} match</TableCell>
+                <TableCell className="segment-column"><HeaderBadge>{segment} predicted</HeaderBadge></TableCell>
+                <TableCell className="segment-column"><HeaderBadge>{segment} target</HeaderBadge></TableCell>
+                <TableCell><HeaderBadge>{segment} match</HeaderBadge></TableCell>
               </React.Fragment>
             ))}
           </TableRow>
@@ -551,20 +556,22 @@ export default function App() {
                 <SectionTitle
                   icon={<CodeIcon color="primary" />}
                   title="How to use this metric with Evaluate"
-                  subtitle="Both the Python-like matrix mode and the GFF mode can be loaded through the same Hugging Face metric."
+                  subtitle="Load the metric once and call either named entry point below."
                 />
-                <Box className="api-mode-grid">
-                  <Box className="api-mode-card">
-                    <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                      Python-like mode
-                    </Typography>
-                    <CodePanel>{PYTHON_API_SNIPPET}</CodePanel>
-                  </Box>
-                  <Box className="api-mode-card">
-                    <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                      GFF mode
-                    </Typography>
-                    <CodePanel>{GFF_API_SNIPPET}</CodePanel>
+                <Box className="api-mode-grid-shell">
+                  <Box className="api-mode-grid">
+                    <Box className="api-mode-card">
+                      <Typography variant="subtitle1" sx={{ mb: 1, textAlign: "center" }}>
+                        Python-like mode
+                      </Typography>
+                      <CodePanel>{PYTHON_API_SNIPPET}</CodePanel>
+                    </Box>
+                    <Box className="api-mode-card">
+                      <Typography variant="subtitle1" sx={{ mb: 1, textAlign: "center" }}>
+                        GFF mode
+                      </Typography>
+                      <CodePanel>{GFF_API_SNIPPET}</CodePanel>
+                    </Box>
                   </Box>
                 </Box>
               </Stack>
@@ -940,7 +947,7 @@ mapping = [
                 </TableContainer>
 
                 <Typography variant="subtitle1">Raw result</Typography>
-                <CodePanel>{compactJson(result.raw_result)}</CodePanel>
+                <CodePanel compact>{compactJson(result.raw_result)}</CodePanel>
               </Stack>
             </Paper>
           ) : null}

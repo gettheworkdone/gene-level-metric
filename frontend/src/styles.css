@@ -94,10 +94,18 @@ body::after {
   }
 }
 
+.api-mode-grid-shell {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
 .api-mode-grid {
   display: grid;
   gap: 16px;
   width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
 }
@@ -167,6 +175,13 @@ body::after {
   font-size: 0.92rem;
 }
 
+.code-panel--compact {
+  white-space: pre;
+  word-break: normal;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 .metric-description p:last-child {
   margin-bottom: 0;
 }
@@ -181,9 +196,9 @@ body::after {
 }
 
 .details-table .MuiTableHead-root .MuiTableCell-root {
-  font-size: 0.84rem;
-  font-weight: 760;
   white-space: nowrap;
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 
 .details-table .MuiTableBody-root .MuiTableCell-root {
@@ -258,4 +273,17 @@ body::after {
 .details-panel .result-table-wrap {
   width: 100%;
   overflow-x: auto;
+}
+
+.details-header-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.22rem 0.5rem;
+  border-radius: 10px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #475569;
+  font-size: 0.66rem;
+  font-weight: 760;
+  line-height: 1.2;
 }

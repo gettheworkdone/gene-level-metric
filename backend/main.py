@@ -9,7 +9,9 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from gene_level_core import DEFAULT_SEGMENTS, DEFAULT_TYPES, PYTHON_EXAMPLE, compute_gff_metric, compute_python_metric
+import evaluate
+
+from gene_level_core import DEFAULT_SEGMENTS, DEFAULT_TYPES, PYTHON_EXAMPLE
 
 
 class PythonComputeRequest(BaseModel):
@@ -32,6 +34,7 @@ class GffComputeRequest(BaseModel):
 ROOT_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = ROOT_DIR / "static"
 ASSETS_DIR = STATIC_DIR / "assets"
+METRIC = evaluate.load(str(ROOT_DIR / "gene-level-metric.py"))
 
 app = FastAPI(title="GENATATOR Gene-level Metric", docs_url=None, redoc_url=None)
 app.add_middleware(
@@ -59,7 +62,7 @@ def python_example() -> dict[str, Any]:
 @app.post("/api/compute/python")
 def compute_python(payload: PythonComputeRequest) -> dict[str, Any]:
     try:
-        return compute_python_metric(
+        return METRIC.compute_gene_level_python(
             preds=payload.preds,
             targets=payload.targets,
             mapping=payload.mapping,
@@ -76,7 +79,7 @@ def compute_python(payload: PythonComputeRequest) -> dict[str, Any]:
 @app.post("/api/compute/gff")
 def compute_gff(payload: GffComputeRequest) -> dict[str, Any]:
     try:
-        return compute_gff_metric(
+        return METRIC.compute_gene_level_gff(
             pred_gff=payload.pred_gff_text,
             true_gff=payload.true_gff_text,
             stratifier=payload.stratifier,
