@@ -158,6 +158,30 @@ body::after {
   min-width: 980px;
 }
 
+.details-table {
+  min-width: 1560px;
+}
+
+.details-table .MuiTableHead-root .MuiTableCell-root {
+  font-size: 0.96rem;
+  font-weight: 760;
+  white-space: nowrap;
+}
+
+.details-table .MuiTableBody-root .MuiTableCell-root {
+  font-size: 0.84rem;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.details-table .MuiTableBody-root .MuiTypography-root {
+  font-size: 0.84rem;
+}
+
+.details-table .MuiTableBody-root .MuiTypography-body2 {
+  font-size: 0.78rem;
+}
+
 .segment-column {
   width: 260px;
 }
@@ -165,14 +189,15 @@ body::after {
 .segment-scrollbox {
   width: 100%;
   max-width: 100%;
-  padding: 0.6rem 0.75rem;
+  padding: 0.52rem 0.68rem;
   border-radius: 12px;
   border: 1px solid rgba(15, 118, 110, 0.16);
   background: rgba(255, 255, 255, 0.66);
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
-  line-height: 1.4;
+  line-height: 1.35;
+  font-size: 0.8rem;
 }
 
 .summary-grid {
@@ -194,4 +219,25 @@ body::after {
 
 .section-anchor {
   scroll-margin-top: 90px;
+}
+
+.details-panel {
+  width: 100%;
+  background: #ffffff;
+  border-top: 1px solid rgba(15, 118, 110, 0.12);
+  border-bottom: 1px solid rgba(15, 118, 110, 0.12);
+}
+
+.details-panel-inner {
+  width: 100%;
+  padding: 2rem clamp(1rem, 2vw, 2rem) 2.2rem;
+}
+
+.details-panel .MuiChip-root {
+  font-size: 0.74rem;
+}
+
+.details-panel .result-table-wrap {
+  width: 100%;
+  overflow-x: auto;
 }

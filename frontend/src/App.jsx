@@ -36,53 +36,13 @@ import CodeIcon from "@mui/icons-material/Code";
 import BiotechIcon from "@mui/icons-material/Biotech";
 
 const PYTHON_PREDS_PLACEHOLDER = `[
-  [
-    [0, 0],
-    [1, 0],
-    [1, 1],
-    [0, 0],
-    [1, 1],
-    [1, 1],
-    [0, 0],
-    [0, 0]
-  ],
-  [
-    [0, 0],
-    [1, 0],
-    [1, 0],
-    [0, 0],
-    [0, 0],
-    [0, 0],
-    [1, 0],
-    [1, 0],
-    [0, 0],
-    [0, 0]
-  ]
+  [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [1, 1], [0, 0], [0, 0]],
+  [[0, 0], [1, 0], [1, 0], [0, 0], [0, 0], [0, 0], [1, 0], [1, 0], [0, 0], [0, 0]]
 ]`;
 
 const PYTHON_TARGETS_PLACEHOLDER = `[
-  [
-    [0, 0],
-    [1, 0],
-    [1, 1],
-    [0, 0],
-    [1, 1],
-    [1, 1],
-    [0, 0],
-    [0, 0]
-  ],
-  [
-    [0, 0],
-    [1, 0],
-    [1, 0],
-    [1, 0],
-    [0, 0],
-    [0, 0],
-    [1, 0],
-    [1, 0],
-    [0, 0],
-    [0, 0]
-  ]
+  [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [1, 1], [0, 0], [0, 0]],
+  [[0, 0], [1, 0], [1, 0], [1, 0], [0, 0], [0, 0], [1, 0], [1, 0], [0, 0], [0, 0]]
 ]`;
 
 const MAPPING_PLACEHOLDER = `TX0001|GENE0001|mRNA|+|GRCh38|chr1|1-8
@@ -180,6 +140,26 @@ const EMPTY_GFF_FORM = {
 
 function prettyJson(value) {
   return JSON.stringify(value, null, 2);
+}
+
+function formatCompactMatrixJson(value) {
+  if (!Array.isArray(value)) {
+    return prettyJson(value);
+  }
+
+  const inlineRows = value.map((row) => {
+    if (!Array.isArray(row)) {
+      return `  ${JSON.stringify(row)}`;
+    }
+
+    const compactRow = JSON.stringify(row)
+      .replace(/,/g, ", ")
+      .replace(/\],\s*\[/g, "], [");
+
+    return `  ${compactRow}`;
+  });
+
+  return `[\n${inlineRows.join(",\n")}\n]`;
 }
 
 function mappingToText(mapping) {
@@ -291,7 +271,7 @@ function DetailTable({ details, segments }) {
 
   return (
     <Box className="result-table-wrap">
-      <Table className="metric-table">
+      <Table className="metric-table details-table">
         <TableHead>
           <TableRow>
             <TableCell>Transcript</TableCell>
@@ -411,8 +391,8 @@ export default function App() {
       const payload = await response.json();
       setTab("python");
       setPythonForm({
-        predsText: prettyJson(payload.preds),
-        targetsText: prettyJson(payload.targets),
+        predsText: formatCompactMatrixJson(payload.preds),
+        targetsText: formatCompactMatrixJson(payload.targets),
         mappingText: mappingToText(payload.mapping),
         stratifier: payload.stratifier,
         types: payload.types,
@@ -914,67 +894,68 @@ mapping = [
           </Paper>
 
           {result ? (
-            <>
-              <Paper className="glass-card" sx={{ p: { xs: 2.2, md: 3 } }}>
-                <Stack spacing={2.2}>
-                  <SectionTitle
-                    icon={<BiotechIcon color="primary" />}
-                    title="Metric result"
-                    subtitle={`Mode: ${result.mode}. Stratifier: ${result.stratifier}.`}
-                  />
+            <Paper className="glass-card" sx={{ p: { xs: 2.2, md: 3 } }}>
+              <Stack spacing={2.2}>
+                <SectionTitle
+                  icon={<BiotechIcon color="primary" />}
+                  title="Metric result"
+                  subtitle={`Mode: ${result.mode}. Stratifier: ${result.stratifier}.`}
+                />
 
-                  <Box className="summary-grid">
-                    <SummaryCard label="Categories" value={result.n_categories} />
-                    <SummaryCard label="Transcripts inspected" value={result.n_transcripts} />
-                    {Object.entries(segmentTotals).map(([segment, value]) => (
-                      <SummaryCard key={segment} label={`Total ${segment} matches`} value={value} />
-                    ))}
-                  </Box>
+                <Box className="summary-grid">
+                  <SummaryCard label="Categories" value={result.n_categories} />
+                  <SummaryCard label="Transcripts inspected" value={result.n_transcripts} />
+                  {Object.entries(segmentTotals).map(([segment, value]) => (
+                    <SummaryCard key={segment} label={`Total ${segment} matches`} value={value} />
+                  ))}
+                </Box>
 
-                  <TableContainer>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Category</TableCell>
-                          {result.segments.map((segment) => (
-                            <TableCell key={segment}>{segment}</TableCell>
-                          ))}
-                          <TableCell>Total</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {result.rows.map((row) => (
-                          <TableRow key={row.category}>
-                            <TableCell>{row.category}</TableCell>
-                            {result.segments.map((segment) => (
-                              <TableCell key={`${row.category}-${segment}`}>{row.values[segment]}</TableCell>
-                            ))}
-                            <TableCell>{row.total}</TableCell>
-                          </TableRow>
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Category</TableCell>
+                        {result.segments.map((segment) => (
+                          <TableCell key={segment}>{segment}</TableCell>
                         ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                        <TableCell>Total</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {result.rows.map((row) => (
+                        <TableRow key={row.category}>
+                          <TableCell>{row.category}</TableCell>
+                          {result.segments.map((segment) => (
+                            <TableCell key={`${row.category}-${segment}`}>{row.values[segment]}</TableCell>
+                          ))}
+                          <TableCell>{row.total}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
 
-                  <Typography variant="subtitle1">Raw result</Typography>
-                  <CodePanel>{prettyJson(result.raw_result)}</CodePanel>
-                </Stack>
-              </Paper>
-
-              <Paper className="glass-card" sx={{ p: { xs: 2.2, md: 3 } }}>
-                <Stack spacing={2.2}>
-                  <SectionTitle
-                    icon={<BiotechIcon color="primary" />}
-                    title="Per-transcript details"
-                    subtitle="Segment lists are shown inside horizontally scrollable cells so long interval sets do not break the layout."
-                  />
-                  <DetailTable details={result.details} segments={activeSegments} />
-                </Stack>
-              </Paper>
-            </>
+                <Typography variant="subtitle1">Raw result</Typography>
+                <CodePanel>{prettyJson(result.raw_result)}</CodePanel>
+              </Stack>
+            </Paper>
           ) : null}
         </Stack>
       </Container>
+
+      {result ? (
+        <Box className="details-panel">
+          <Box className="details-panel-inner">
+            <Stack spacing={2.2}>
+              <SectionTitle
+                icon={<BiotechIcon color="primary" />}
+                title="Per-transcript details"
+              />
+              <DetailTable details={result.details} segments={activeSegments} />
+            </Stack>
+          </Box>
+        </Box>
+      ) : null}
     </Box>
   );
 }
