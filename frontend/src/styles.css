@@ -94,6 +94,24 @@ body::after {
   }
 }
 
+.api-mode-grid {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.api-mode-card {
+  width: 100%;
+}
+
+@media (max-width: 1199px) {
+  .api-mode-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .metric-value {
   font-size: clamp(2.2rem, 4vw, 3.8rem);
   line-height: 1;
@@ -163,7 +181,7 @@ body::after {
 }
 
 .details-table .MuiTableHead-root .MuiTableCell-root {
-  font-size: 0.96rem;
+  font-size: 0.84rem;
   font-weight: 760;
   white-space: nowrap;
 }

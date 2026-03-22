@@ -142,6 +142,10 @@ function prettyJson(value) {
   return JSON.stringify(value, null, 2);
 }
 
+function compactJson(value) {
+  return JSON.stringify(value);
+}
+
 function formatCompactMatrixJson(value) {
   if (!Array.isArray(value)) {
     return prettyJson(value);
@@ -549,20 +553,20 @@ export default function App() {
                   title="How to use this metric with Evaluate"
                   subtitle="Both the Python-like matrix mode and the GFF mode can be loaded through the same Hugging Face metric."
                 />
-                <Grid container spacing={2}>
-                  <Grid item xs={12} xl={6}>
+                <Box className="api-mode-grid">
+                  <Box className="api-mode-card">
                     <Typography variant="subtitle1" sx={{ mb: 1 }}>
                       Python-like mode
                     </Typography>
                     <CodePanel>{PYTHON_API_SNIPPET}</CodePanel>
-                  </Grid>
-                  <Grid item xs={12} xl={6}>
+                  </Box>
+                  <Box className="api-mode-card">
                     <Typography variant="subtitle1" sx={{ mb: 1 }}>
                       GFF mode
                     </Typography>
                     <CodePanel>{GFF_API_SNIPPET}</CodePanel>
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
               </Stack>
             </Paper>
 
@@ -936,7 +940,7 @@ mapping = [
                 </TableContainer>
 
                 <Typography variant="subtitle1">Raw result</Typography>
-                <CodePanel>{prettyJson(result.raw_result)}</CodePanel>
+                <CodePanel>{compactJson(result.raw_result)}</CodePanel>
               </Stack>
             </Paper>
           ) : null}
