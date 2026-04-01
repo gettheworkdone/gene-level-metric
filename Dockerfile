@@ -22,16 +22,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh \
-    && bash /tmp/miniconda.sh -b -p $CONDA_DIR \
-    && rm /tmp/miniconda.sh \
-    && conda config --set always_yes yes --set changeps1 no \
-    && conda config --set channel_priority strict \
-    && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main \
-    && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r \
-    && conda install -c conda-forge -c bioconda busco==5.7.1 \
-    && conda clean -afy
-
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -41,4 +31,4 @@ COPY --from=frontend-build /app/frontend/dist /app/static
 
 EXPOSE 7860
 
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["/app/start.sh"]

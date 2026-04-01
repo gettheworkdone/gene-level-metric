@@ -44,10 +44,12 @@ See `leaderboard_required_files/README.md`.
 
 ## BUSCO installation
 
-The Docker image installs Miniconda and BUSCO 5.7.1 via:
+BUSCO is installed at container startup (runtime) to avoid OOM during image build on free tier.
+
+Startup script installs Miniconda (if missing), then installs:
 
 ```bash
-conda install -c bioconda busco==5.7.1
+conda install -c conda-forge -c bioconda busco==5.7.1
 ```
 
 BUSCO is run in offline proteins mode for each model.
