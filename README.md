@@ -7,7 +7,7 @@ sdk: docker
 app_port: 7860
 pinned: false
 license: apache-2.0
-short_description: Gene-level exon-intron metric
+short_description: Gene-level exon-intron metric + live leaderboard
 tags:
   - evaluate
   - genomics
@@ -15,128 +15,44 @@ tags:
   - bioinformatics
 ---
 
-# Gene-level Metric
+# Gene-level Metric + Live Leaderboard
 
-This repository contains a Hugging Face Space and an Evaluate-compatible metric for biologically rigorous assessment of exon–intron structure. Load it once with `evaluate.load("shmelev/gene-level-metric")`, then call either `compute_gene_level_python(...)` or `compute_gene_level_gff(...)`.
+This Space now includes:
 
-## Two supported modes
+1. **Metric usage page** (Evaluate API + interactive calculator).
+2. **Live leaderboard page** that computes scores from prediction files automatically.
 
-### 1. Python-like mode
+## Leaderboard pipeline
 
-Use transcript-wise binary matrices:
+When you click **Start / Rebuild leaderboard** in the UI, backend will:
 
-- `preds`: list of transcript arrays
-- `targets`: list of transcript arrays
-- `mapping`: list of strings in the format  
-  `transcript_id|gene_id|transcript_type|strand|genome|chrom|coord`
-- `stratifier`: one of `type`, `transcript_type`, `transcript`, `transcript_id`, `gene`, `gene_id`, `chromosome`, `strand`
-- `types`: subset of `["mRNA", "lnc_RNA"]`
-- `segments`: subset of `["exon", "CDS"]`
+1. Clone/pull: `https://github.com/alexeyshmelev/genatator-leaderboard-predictions.git`.
+2. Enter `predictions/` and process all `*.gff` files.
+3. Compute gene-level metric for each file.
+4. Compute BUSCO metric for each file.
+5. Stream progress and partial results via `/api/leaderboard/status`.
 
-Each transcript array must have shape:
+## Required local assets
 
-```text
-(transcript_length_in_nt, number_of_selected_segments)
+Put these files into `leaderboard_required_files/`:
+
+- `true.gff`
+- `reference.fa`
+- `lineage/` (BUSCO offline lineage directory)
+
+See `leaderboard_required_files/README.md`.
+
+## BUSCO installation
+
+BUSCO is installed at container startup (runtime) to avoid OOM during image build on free tier.
+
+Startup script installs Miniconda (if missing), then installs:
+
+```bash
+conda create -n busco_env -c conda-forge -c bioconda python=3.12 busco==5.7.1
 ```
 
-The column order must match `segments`.
-
-Example:
-
-```python
-import evaluate
-
-metric = evaluate.load("shmelev/gene-level-metric")
-
-result = metric.compute_gene_level_python(
-    preds=[
-        [
-            [0, 0],
-            [1, 0],
-            [1, 1],
-            [0, 0],
-            [1, 1],
-            [1, 1],
-            [0, 0],
-            [0, 0],
-        ]
-    ],
-    targets=[
-        [
-            [0, 0],
-            [1, 0],
-            [1, 1],
-            [0, 0],
-            [1, 1],
-            [1, 1],
-            [0, 0],
-            [0, 0],
-        ]
-    ],
-    mapping=[
-        "TX0001|GENE0001|mRNA|+|GRCh38|chr1|1-8",
-    ],
-    stratifier="type",
-    types=["mRNA", "lnc_RNA"],
-    segments=["exon", "CDS"],
-)
-```
-
-### 2. GFF mode
-
-Use:
-
-- `pred_gff`: path to a prediction GFF file or raw GFF text
-- `true_gff`: path to a reference GFF file or raw GFF text
-- `stratifier`, `types`, `segments`: same as above
-
-Reference GFF requirements:
-
-- standard 9-column GFF
-- transcript rows of type `mRNA` and/or `lnc_RNA`
-- `gene` rows with `ID`
-- transcript rows with `ID` and `Parent`
-- exon/CDS rows with `Parent=<transcript_id>`
-
-Prediction GFF requirements in this implementation:
-
-- standard 9-column GFF
-- only `exon` / `CDS` rows are used
-- `seqid` must equal the transcript id from the reference annotation
-- coordinates are interpreted in transcript-relative space
-
-Example:
-
-```python
-import evaluate
-
-metric = evaluate.load("shmelev/gene-level-metric")
-
-result = metric.compute_gene_level_gff(
-    pred_gff="predictions.gff",
-    true_gff="reference.gff",
-    stratifier="type",
-    types=["mRNA", "lnc_RNA"],
-    segments=["exon", "CDS"],
-)
-```
-
-## What the metric returns
-
-The metric returns counts grouped by the chosen `stratifier`. Each category contains one count per selected segment.
-
-Example output:
-
-```python
-{
-    "raw_result": {
-        "lnc_RNA": [0, 0],
-        "mRNA": [1, 1],
-    },
-    "segments": ["exon", "CDS"],
-    "stratifier": "type",
-}
-```
+BUSCO is installed in a dedicated conda env (`busco_env`) with Python 3.12 to avoid solver conflicts, and is run in offline proteins mode for each model.
 
 ## Local run
 
@@ -145,4 +61,4 @@ docker build -t gene-level-metric .
 docker run -p 7860:7860 gene-level-metric
 ```
 
-Then open `http://localhost:7860`.
+Open `http://localhost:7860`.

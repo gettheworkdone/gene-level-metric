@@ -34,6 +34,7 @@ import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import CodeIcon from "@mui/icons-material/Code";
 import BiotechIcon from "@mui/icons-material/Biotech";
+import LeaderboardPanel from "./LeaderboardPanel";
 
 const PYTHON_PREDS_PLACEHOLDER = `[
   [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [1, 1], [0, 0], [0, 0]],
@@ -335,6 +336,7 @@ function DetailTable({ details, segments }) {
 }
 
 export default function App() {
+  const [pageMode, setPageMode] = useState("metric");
   const [tab, setTab] = useState("python");
   const [pythonForm, setPythonForm] = useState(EMPTY_PYTHON_FORM);
   const [gffForm, setGffForm] = useState(EMPTY_GFF_FORM);
@@ -519,6 +521,25 @@ export default function App() {
 
       <Container maxWidth="xl" sx={{ py: 4 }}>
         <Stack spacing={3.2}>
+          <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
+            <Button
+              variant={pageMode === "metric" ? "contained" : "outlined"}
+              size="large"
+              onClick={() => setPageMode("metric")}
+            >
+              Metric usage and description
+            </Button>
+            <Button
+              variant={pageMode === "leaderboard" ? "contained" : "outlined"}
+              size="large"
+              onClick={() => setPageMode("leaderboard")}
+            >
+              Leaderboard
+            </Button>
+          </Stack>
+          {pageMode === "leaderboard" ? <LeaderboardPanel /> : null}
+          {pageMode === "metric" ? (
+          <>
           <Paper className="glass-card hero-card" sx={{ p: { xs: 2.4, md: 3.4 } }}>
             <Stack spacing={2.2}>
               <Stack
@@ -904,7 +925,7 @@ mapping = [
             </Stack>
           </Paper>
 
-          {result ? (
+          {pageMode === "metric" && result ? (
             <Paper className="glass-card" sx={{ p: { xs: 2.2, md: 3 } }}>
               <Stack spacing={2.2}>
                 <SectionTitle
@@ -951,10 +972,12 @@ mapping = [
               </Stack>
             </Paper>
           ) : null}
+          </>
+          ) : null}
         </Stack>
       </Container>
 
-      {result ? (
+      {pageMode === "metric" && result ? (
         <Box className="details-panel">
           <Box className="details-panel-inner">
             <Stack spacing={2.2}>
