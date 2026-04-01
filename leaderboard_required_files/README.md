@@ -2,8 +2,8 @@
 
 Place required assets here before running leaderboard build:
 
-- `true.gff` — reference annotation GFF.
-- `reference.fa` — reference genome FASTA matching `true.gff`.
-- `lineage/` — BUSCO lineage database folder (offline mode).
+- `chr20.gff` — reference annotation GFF.
+- `Hs_NC_060944.1.fa` — reference FASTA matching the annotation.
+- `lineage/mammalia_odb10/` — BUSCO lineage directory (offline mode).
 
-The backend will refuse to start the pipeline if these are missing.
+The backend starts leaderboard automatically at app startup and will fail if these are missing.

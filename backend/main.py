@@ -52,6 +52,11 @@ if ASSETS_DIR.exists():
     app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
 
 
+@app.on_event("startup")
+def start_leaderboard_pipeline() -> None:
+    LEADERBOARD.start()
+
+
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}

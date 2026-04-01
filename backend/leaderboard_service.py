@@ -73,12 +73,12 @@ class LeaderboardService:
         try:
             self.required_dir.mkdir(parents=True, exist_ok=True)
             self.runs_dir.mkdir(parents=True, exist_ok=True)
-            true_gff = self.required_dir / "true.gff"
-            fasta = self.required_dir / "reference.fa"
-            lineage = self.required_dir / "lineage"
+            true_gff = self.required_dir / "chr20.gff"
+            fasta = self.required_dir / "Hs_NC_060944.1.fa"
+            lineage = self.required_dir / "lineage" / "mammalia_odb10"
             if not true_gff.exists() or not fasta.exists() or not lineage.exists():
                 raise FileNotFoundError(
-                    "Missing required files. Put true.gff, reference.fa, and lineage/ into leaderboard_required_files/."
+                    "Missing required files. Put chr20.gff, Hs_NC_060944.1.fa and lineage/mammalia_odb10 into leaderboard_required_files/."
                 )
 
             self._set_state(stage="sync", message="Syncing predictions repository")

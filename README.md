@@ -24,7 +24,7 @@ This Space now includes:
 
 ## Leaderboard pipeline
 
-When you click **Start / Rebuild leaderboard** in the UI, backend will:
+Leaderboard starts automatically when the app starts. Backend will:
 
 1. Clone/pull: `https://github.com/alexeyshmelev/genatator-leaderboard-predictions.git`.
 2. Enter `predictions/` and process all `*.gff` files.
@@ -36,9 +36,9 @@ When you click **Start / Rebuild leaderboard** in the UI, backend will:
 
 Put these files into `leaderboard_required_files/`:
 
-- `true.gff`
-- `reference.fa`
-- `lineage/` (BUSCO offline lineage directory)
+- `chr20.gff`
+- `Hs_NC_060944.1.fa`
+- `lineage/mammalia_odb10/` (BUSCO offline lineage directory)
 
 See `leaderboard_required_files/README.md`.
 

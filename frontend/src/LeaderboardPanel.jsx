@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Box,
-  Button,
   LinearProgress,
   Paper,
   Stack,
@@ -44,10 +43,6 @@ export default function LeaderboardPanel() {
     return () => clearInterval(id);
   }, []);
 
-  const start = async () => {
-    await fetch("/api/leaderboard/start", { method: "POST" });
-    await loadStatus();
-  };
 
   const progress = useMemo(() => {
     if (!state || !state.total_models) return 0;
@@ -60,15 +55,12 @@ export default function LeaderboardPanel() {
         <Stack spacing={1.5}>
           <Typography variant="h5">Leaderboard (live pipeline)</Typography>
           <Typography color="text.secondary">
-            Click start to clone predictions and compute gene-level + BUSCO metrics for every .gff file.
+            Leaderboard pipeline starts automatically on app startup and computes gene-level + BUSCO metrics for every .gff file.
           </Typography>
-          <Stack direction="row" spacing={1.2}>
-            <Button variant="contained" onClick={start} disabled={state?.running}>Start / Rebuild leaderboard</Button>
-            <Typography sx={{ alignSelf: "center" }}>
-              {state?.stage ? `Stage: ${state.stage}` : "Stage: idle"}
-              {state?.current_model ? ` • Current: ${state.current_model}` : ""}
-            </Typography>
-          </Stack>
+          <Typography sx={{ alignSelf: "flex-start" }}>
+            {state?.stage ? `Stage: ${state.stage}` : "Stage: idle"}
+            {state?.current_model ? ` • Current: ${state.current_model}` : ""}
+          </Typography>
           <LinearProgress variant="determinate" value={progress} />
           <Typography variant="body2" color="text.secondary">
             {state?.completed_models || 0}/{state?.total_models || 0} completed • {progress}%
