@@ -49,10 +49,10 @@ BUSCO is installed at container startup (runtime) to avoid OOM during image buil
 Startup script installs Miniconda (if missing), then installs:
 
 ```bash
-conda install -c conda-forge -c bioconda busco==5.7.1
+conda create -n busco_env -c conda-forge -c bioconda python=3.12 busco==5.7.1
 ```
 
-BUSCO is run in offline proteins mode for each model.
+BUSCO is installed in a dedicated conda env (`busco_env`) with Python 3.12 to avoid solver conflicts, and is run in offline proteins mode for each model.
 
 ## Local run
 
