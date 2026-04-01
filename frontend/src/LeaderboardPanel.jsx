@@ -12,6 +12,16 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
+import {
+  BarChart,
+  Bar,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 function BuscoBar({ row }) {
   const total = Math.max((row.complete || 0) + (row.fragmented || 0) + (row.missing || 0), 1);
@@ -49,6 +59,24 @@ export default function LeaderboardPanel() {
     return Math.round((state.completed_models / state.total_models) * 100);
   }, [state]);
 
+  const geneChartData = useMemo(() => {
+    return (state?.gene_rows || []).map((row) => ({
+      name: row.model_id,
+      lncrna_exon: row.lncrna_exon,
+      mrna_exon: row.mrna_exon,
+      mrna_cds: row.mrna_cds,
+    }));
+  }, [state]);
+
+  const buscoChartData = useMemo(() => {
+    return (state?.busco_rows || []).map((row) => ({
+      name: row.model_id,
+      complete: row.complete,
+      fragmented: row.fragmented,
+      missing: row.missing,
+    }));
+  }, [state]);
+
   return (
     <Stack spacing={2.2}>
       <Paper className="glass-card" sx={{ p: 2.4 }}>
@@ -71,6 +99,24 @@ export default function LeaderboardPanel() {
       </Paper>
 
       <Paper className="glass-card" sx={{ p: 2.4 }}>
+        <Typography variant="h6" sx={{ mb: 1 }}>Gene-level bar chart</Typography>
+        <Box sx={{ width: "100%", height: 340 }}>
+          <ResponsiveContainer>
+            <BarChart data={geneChartData} margin={{ top: 10, right: 10, bottom: 40, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" angle={-20} textAnchor="end" interval={0} height={72} />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="mrna_cds" stackId="gene" fill="#0ea5e9" name="CDS mRNA" />
+              <Bar dataKey="mrna_exon" stackId="gene" fill="#22c55e" name="exon mRNA" />
+              <Bar dataKey="lncrna_exon" stackId="gene" fill="#0f766e" name="exon lncRNA" />
+            </BarChart>
+          </ResponsiveContainer>
+        </Box>
+      </Paper>
+
+      <Paper className="glass-card" sx={{ p: 2.4 }}>
         <Typography variant="h6" sx={{ mb: 1 }}>Gene-level leaderboard</Typography>
         <Table size="small">
           <TableHead>
@@ -86,6 +132,24 @@ export default function LeaderboardPanel() {
             ))}
           </TableBody>
         </Table>
+      </Paper>
+
+      <Paper className="glass-card" sx={{ p: 2.4 }}>
+        <Typography variant="h6" sx={{ mb: 1 }}>BUSCO bar chart</Typography>
+        <Box sx={{ width: "100%", height: 340 }}>
+          <ResponsiveContainer>
+            <BarChart data={buscoChartData} margin={{ top: 10, right: 10, bottom: 40, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" angle={-20} textAnchor="end" interval={0} height={72} />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="complete" stackId="busco" fill="#16a34a" name="Complete" />
+              <Bar dataKey="fragmented" stackId="busco" fill="#f59e0b" name="Fragmented" />
+              <Bar dataKey="missing" stackId="busco" fill="#ef4444" name="Missing" />
+            </BarChart>
+          </ResponsiveContainer>
+        </Box>
       </Paper>
 
       <Paper className="glass-card" sx={{ p: 2.4 }}>

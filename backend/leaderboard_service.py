@@ -91,7 +91,7 @@ class LeaderboardService:
 
             for idx, pred_file in enumerate(prediction_files, start=1):
                 model_id = pred_file.stem
-                self._set_state(stage="gene", current_model=model_id, message=f"[{idx}/{len(prediction_files)}] Gene-level metric")
+                self._set_state(stage="gene", current_model=model_id, message=f"[gene {idx}/{len(prediction_files)}] Gene-level metric")
                 gene_result = compute_gff_metric(
                     pred_gff=str(pred_file),
                     true_gff=str(true_gff),
@@ -108,8 +108,14 @@ class LeaderboardService:
                 }
                 gene_row["score_gene"] = gene_row["lncrna_exon"] + max(gene_row["mrna_exon"], gene_row["mrna_cds"])
                 gene_rows.append(gene_row)
+                self._set_state(
+                    completed_models=idx,
+                    gene_rows=sorted(gene_rows, key=lambda x: x["score_gene"], reverse=True),
+                )
 
-                self._set_state(stage="busco", message=f"[{idx}/{len(prediction_files)}] BUSCO metric")
+            for idx, pred_file in enumerate(prediction_files, start=1):
+                model_id = pred_file.stem
+                self._set_state(stage="busco", current_model=model_id, message=f"[busco {idx}/{len(prediction_files)}] BUSCO metric")
                 run_dir = self.runs_dir / model_id
                 if run_dir.exists():
                     shutil.rmtree(run_dir)
@@ -134,10 +140,8 @@ class LeaderboardService:
                         "missing": int(busco_result["Missing"]),
                     }
                 )
-
                 self._set_state(
                     completed_models=idx,
-                    gene_rows=sorted(gene_rows, key=lambda x: x["score_gene"], reverse=True),
                     busco_rows=sorted(busco_rows, key=lambda x: (x["complete"] + x["fragmented"], x["complete"]), reverse=True),
                 )
 
