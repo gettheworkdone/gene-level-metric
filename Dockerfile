@@ -26,9 +26,10 @@ RUN curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_6
     && bash /tmp/miniconda.sh -b -p $CONDA_DIR \
     && rm /tmp/miniconda.sh \
     && conda config --set always_yes yes --set changeps1 no \
+    && conda config --set channel_priority strict \
     && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main \
     && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r \
-    && conda install -c bioconda busco==5.7.1 \
+    && conda install -c conda-forge -c bioconda busco==5.7.1 \
     && conda clean -afy
 
 COPY requirements.txt ./
