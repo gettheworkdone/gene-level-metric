@@ -13,6 +13,8 @@ import evaluate
 
 from gene_level_core import DEFAULT_SEGMENTS, DEFAULT_TYPES, PYTHON_EXAMPLE
 
+from .leaderboard_service import LeaderboardService
+
 
 class PythonComputeRequest(BaseModel):
     preds: list[list[list[int]]]
@@ -35,6 +37,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = ROOT_DIR / "static"
 ASSETS_DIR = STATIC_DIR / "assets"
 METRIC = evaluate.load(str(ROOT_DIR / "gene-level-metric.py"))
+LEADERBOARD = LeaderboardService(ROOT_DIR)
 
 app = FastAPI(title="GENATATOR Gene-level Metric", docs_url=None, redoc_url=None)
 app.add_middleware(
@@ -90,6 +93,18 @@ def compute_gff(payload: GffComputeRequest) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:  # pragma: no cover
         raise HTTPException(status_code=500, detail=f"Unexpected error: {exc}") from exc
+
+
+
+
+@app.get("/api/leaderboard/status")
+def leaderboard_status() -> dict[str, Any]:
+    return LEADERBOARD.status()
+
+
+@app.post("/api/leaderboard/start")
+def leaderboard_start() -> dict[str, Any]:
+    return LEADERBOARD.start()
 
 
 @app.get("/", response_model=None)
