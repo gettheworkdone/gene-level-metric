@@ -4,3 +4,4 @@ numpy>=1.26,<3.0
 pandas>=2.2,<3.0
 evaluate>=0.4.6,<0.5
 datasets>=2.20,<4.0
+biopython>=1.84,<2.0
