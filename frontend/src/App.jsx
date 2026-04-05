@@ -46,8 +46,8 @@ const PYTHON_TARGETS_PLACEHOLDER = `[
   [[0, 0], [1, 0], [1, 0], [1, 0], [0, 0], [0, 0], [1, 0], [1, 0], [0, 0], [0, 0]]
 ]`;
 
-const MAPPING_PLACEHOLDER = `TX0001|GENE0001|mRNA|+|GRCh38|chr1|1-8
-TX0002|GENE0002|lnc_RNA|-|GRCh38|chr5|1-10`;
+const MAPPING_PLACEHOLDER = `TX0001|GENE0001|mRNA|+|GRCh38|chr1|1:8
+TX0002|GENE0002|lnc_RNA|-|GRCh38|chr5|1:10`;
 
 const PYTHON_API_SNIPPET = `import evaluate
 
@@ -79,7 +79,7 @@ result = metric.compute_gene_level_python(
         ]
     ],
     mapping=[
-        "TX0001|GENE0001|mRNA|+|GRCh38|chr1|1-8",
+        "TX0001|GENE0001|mRNA|+|GRCh38|chr1|1:8",
     ],
     stratifier="type",
     types=["mRNA", "lnc_RNA"],
