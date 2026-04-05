@@ -7,7 +7,7 @@ sdk: docker
 app_port: 7860
 pinned: false
 license: apache-2.0
-short_description: Gene-level exon-intron metric + live leaderboard
+short_description: Gene-level segmentation metric + leaderboard
 tags:
   - evaluate
   - genomics

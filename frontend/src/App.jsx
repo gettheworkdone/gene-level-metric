@@ -46,12 +46,12 @@ const PYTHON_TARGETS_PLACEHOLDER = `[
   [[0, 0], [1, 0], [1, 0], [1, 0], [0, 0], [0, 0], [1, 0], [1, 0], [0, 0], [0, 0]]
 ]`;
 
-const MAPPING_PLACEHOLDER = `TX0001|GENE0001|mRNA|+|GRCh38|chr1|1-8
-TX0002|GENE0002|lnc_RNA|-|GRCh38|chr5|1-10`;
+const MAPPING_PLACEHOLDER = `TX0001|GENE0001|mRNA|+|GRCh38|chr1|1:8
+TX0002|GENE0002|lnc_RNA|-|GRCh38|chr5|1:10`;
 
 const PYTHON_API_SNIPPET = `import evaluate
 
-metric = evaluate.load("shmelev/gene-level-metric")
+metric = evaluate.load("shmelev/gene-level-metric", revision="metric-only")
 
 result = metric.compute_gene_level_python(
     preds=[
@@ -79,7 +79,7 @@ result = metric.compute_gene_level_python(
         ]
     ],
     mapping=[
-        "TX0001|GENE0001|mRNA|+|GRCh38|chr1|1-8",
+        "TX0001|GENE0001|mRNA|+|GRCh38|chr1|1:8",
     ],
     stratifier="type",
     types=["mRNA", "lnc_RNA"],
@@ -90,11 +90,11 @@ print(result)`;
 
 const GFF_API_SNIPPET = `import evaluate
 
-metric = evaluate.load("shmelev/gene-level-metric")
+metric = evaluate.load("shmelev/gene-level-metric", revision="metric-only")
 
 result = metric.compute_gene_level_gff(
-    pred_gff="predictions.gff",
-    true_gff="reference.gff",
+    pred_gff="<predictions.gff>",
+    true_gff="<reference.gff>",
     stratifier="type",
     types=["mRNA", "lnc_RNA"],
     segments=["exon", "CDS"],
@@ -515,7 +515,7 @@ export default function App() {
     <Box>
       <AppBar position="sticky">
         <Toolbar>
-          <Typography variant="h6">Gene-level Metric</Typography>
+          <Typography variant="h6">Gene-level Metric&Leaderboard</Typography>
         </Toolbar>
       </AppBar>
 
@@ -550,10 +550,10 @@ export default function App() {
               >
                 <Box sx={{ maxWidth: 860 }}>
                   <Typography variant="h3" sx={{ mb: 1 }}>
-                    Gene-level exon–intron metric
+                    Gene-level segmentation metric
                   </Typography>
                   <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 840 }}>
-                    Implementation of a metric for biologically rigorous evaluation of exon–intron structure.
+                    Implementation of a metric for biologically rigorous evaluation of segmentation structure.
                   </Typography>
                 </Box>
               </Stack>
@@ -577,7 +577,7 @@ export default function App() {
                 <SectionTitle
                   icon={<CodeIcon color="primary" />}
                   title="How to use this metric with Evaluate"
-                  subtitle="Load the metric once and call either named entry point below."
+                  subtitle="Load the version you need (python or .gff mode) and run evaluation."
                 />
                 <Box className="api-mode-grid-shell">
                   <Box className="api-mode-grid">

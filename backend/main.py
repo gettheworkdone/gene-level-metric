@@ -33,6 +33,11 @@ class GffComputeRequest(BaseModel):
     segments: list[str] = Field(default_factory=lambda: DEFAULT_SEGMENTS.copy())
 
 
+class LeaderboardSubmitRequest(BaseModel):
+    model_name: str
+    pred_gff_text: str
+
+
 ROOT_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = ROOT_DIR / "static"
 ASSETS_DIR = STATIC_DIR / "assets"
@@ -110,6 +115,31 @@ def leaderboard_status() -> dict[str, Any]:
 @app.post("/api/leaderboard/start")
 def leaderboard_start() -> dict[str, Any]:
     return LEADERBOARD.start()
+
+
+@app.post("/api/leaderboard/submit")
+def leaderboard_submit(payload: LeaderboardSubmitRequest) -> dict[str, Any]:
+    if not payload.pred_gff_text.strip():
+        raise HTTPException(status_code=400, detail="Prediction GFF text is empty.")
+    return LEADERBOARD.enqueue_submission(payload.model_name, payload.pred_gff_text)
+
+
+@app.get("/api/leaderboard/colored-gff/{model_id}")
+def leaderboard_colored_gff(model_id: str) -> Response:
+    try:
+        path = LEADERBOARD.get_colored_gff_path(model_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return FileResponse(path, media_type="text/plain", filename=f"{model_id}_busco_colored.gff")
+
+
+@app.get("/api/leaderboard/user-colored-gff/{submission_id}")
+def leaderboard_user_colored_gff(submission_id: str) -> Response:
+    try:
+        path = LEADERBOARD.get_user_colored_gff_path(submission_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return FileResponse(path, media_type="text/plain", filename=f"user_{submission_id}_busco_colored.gff")
 
 
 @app.get("/", response_model=None)

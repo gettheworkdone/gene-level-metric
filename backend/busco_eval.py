@@ -35,6 +35,7 @@ class BUSCOEvaluator:
         lineage: PathLike,
         out_dir: PathLike,
         out_name: str = "busco_run",
+        output_gff_path: Union[PathLike, None] = None,
         cpu: int = 2,
         busco_exe: str = "busco",
     ) -> Dict[str, int]:
@@ -96,6 +97,15 @@ class BUSCOEvaluator:
             busco_exe=busco_exe,
         )
 
+        if output_gff_path:
+            self.export_colored_pred_gff(
+                pred_df=pred_df,
+                transcript_meta=transcript_meta,
+                pred_transcript_ids=pred_transcript_ids,
+                out_dir=out_dir,
+                out_name=out_name,
+                output_gff_path=output_gff_path,
+            )
         return self.parse_busco_json(busco_json)
 
     def _read_gff(self, gff: Union[PathLike, pd.DataFrame], mode: str) -> pd.DataFrame:
@@ -165,16 +175,29 @@ class BUSCOEvaluator:
 
     @staticmethod
     def _translate_protein(seq: str, strand: str):
-        protein_vars_3_frames = []
-        source = seq if strand == "+" else str(Seq(seq).reverse_complement())
-        for orf in range(3):
-            trimmed = source[orf:]
-            trimmed = trimmed[: len(trimmed) - (len(trimmed) % 3)]
-            if not trimmed:
-                continue
-            protein_var = str(Seq(trimmed).translate(to_stop=False))
-            protein_vars_3_frames.extend([p for p in protein_var.split("*") if p])
-        return max(protein_vars_3_frames, key=len, default="")
+        protein_vars = []
+        if strand == "+":
+            seq = seq[: len(seq) - (len(seq) % 3)]
+            if not seq:
+                return ""
+            protein_var = str(Seq(seq).translate(to_stop=False))
+            for protein in protein_var.split("*"):
+                if protein:
+                    protein_vars.append(protein)
+        elif strand == "-":
+            reverse_seq = str(Seq(seq).reverse_complement())
+            reverse_seq = reverse_seq[: len(reverse_seq) - (len(reverse_seq) % 3)]
+            if not reverse_seq:
+                return ""
+            protein_var = str(Seq(reverse_seq).translate(to_stop=False))
+            for protein in protein_var.split("*"):
+                if protein:
+                    protein_vars.append(protein)
+        if not protein_vars:
+            return ""
+        max_len = max(len(s) for s in protein_vars)
+        max_proteins = [s for s in protein_vars if len(s) == max_len]
+        return max_proteins[0]
 
     @staticmethod
     def get_nt_sequence(records, chrom_id: str, start: int, end: int) -> str:
@@ -255,3 +278,84 @@ class BUSCOEvaluator:
             "Fragmented": fragmented,
             "Missing": max(275 - complete - fragmented, 0),
         }
+
+    def export_colored_pred_gff(
+        self,
+        pred_df: pd.DataFrame,
+        transcript_meta: pd.DataFrame,
+        pred_transcript_ids: Iterable[str],
+        out_dir: PathLike,
+        out_name: str,
+        output_gff_path: PathLike,
+    ) -> Path:
+        transcript_to_category = self.parse_busco_full_table_transcripts(out_dir=out_dir, out_name=out_name)
+        output_gff_path = Path(output_gff_path)
+        output_gff_path.parent.mkdir(parents=True, exist_ok=True)
+        keep_columns = ["seqid", "source", "type", "start", "end", "score", "strand", "phase"]
+        allowed_types = {"mRNA", "transcript", "exon", "CDS", "intron"}
+        pieces = []
+        for transcript_id in pred_transcript_ids:
+            transcript_id = str(transcript_id)
+            if transcript_id not in transcript_meta.index:
+                continue
+            meta = transcript_meta.loc[transcript_id]
+            transcript_start = int(meta["start"])
+            transcript_chrom = str(meta["seqid"])
+            subdf = pred_df[pred_df["ID"] == transcript_id].copy()
+            if subdf.empty:
+                continue
+            subdf = subdf[subdf["type"].isin(allowed_types)].copy()
+            if subdf.empty:
+                continue
+            subdf["seqid"] = transcript_chrom
+            subdf["start"] = subdf["start"].astype(int) + transcript_start + 1
+            subdf["end"] = subdf["end"].astype(int) + transcript_start
+            subdf = subdf[keep_columns].copy()
+
+            def make_attributes(feature_type: str) -> str:
+                if feature_type in {"mRNA", "transcript"}:
+                    return f"ID={transcript_id}"
+                if feature_type == "exon":
+                    return f"ID=exon-{transcript_id};Parent={transcript_id}"
+                if feature_type == "CDS":
+                    return f"ID=cds-{transcript_id};Parent={transcript_id}"
+                return ""
+
+            subdf["attributes"] = subdf["type"].map(make_attributes)
+            category = transcript_to_category.get(transcript_id)
+            if category == "complete":
+                color = "92,184,234"
+            elif category == "fragmented":
+                color = "255,215,0"
+            else:
+                color = "200,200,200"
+            subdf["attributes"] = subdf["attributes"] + f";color={color}"
+            pieces.append(subdf)
+
+        result_df = pd.concat(pieces, axis=0, ignore_index=True) if pieces else pd.DataFrame(columns=keep_columns + ["attributes"])
+        with output_gff_path.open("w", encoding="utf-8") as handle:
+            handle.write("##gff-version 3\n")
+            handle.write("#!gff-spec-version 1.21\n")
+            result_df.to_csv(handle, sep="\t", header=False, index=False)
+        return output_gff_path
+
+    @staticmethod
+    def parse_busco_full_table_transcripts(out_dir: PathLike, out_name: str) -> Dict[str, str]:
+        root = Path(out_dir) / out_name
+        matches = list(root.rglob("full_table.tsv"))
+        if not matches:
+            return {}
+        full_table_path = matches[0]
+        columns = ["Busco id", "Status", "Sequence", "Score", "Length", "OrthoDB url", "Description"]
+        df = pd.read_csv(full_table_path, sep="\t", skiprows=3, names=columns, dtype=str)
+        df["Status"] = df["Status"].fillna("").str.strip()
+        df["Sequence"] = df["Sequence"].fillna("").str.strip()
+        df = df[df["Sequence"] != ""]
+        df = df[df["Status"].isin(["Complete", "Duplicated", "Fragmented"])]
+        if df.empty:
+            return {}
+        df["category"] = df["Status"].map({"Complete": "complete", "Duplicated": "complete", "Fragmented": "fragmented"})
+        priority = {"fragmented": 0, "complete": 1}
+        df["priority"] = df["category"].map(priority)
+        best = df.sort_values(["Sequence", "priority"]).groupby("Sequence", as_index=False).tail(1)
+        return dict(zip(best["Sequence"], best["category"]))
