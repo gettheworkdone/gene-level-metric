@@ -82,7 +82,7 @@ export default function LeaderboardPanel() {
 
   const launchDateText = useMemo(() => {
     if (!state?.launch_date) return "—";
-    return new Date(state.launch_date * 1000).toISOString();
+    return new Date(state.launch_date * 1000).toLocaleString();
   }, [state]);
 
   const progress = useMemo(() => {
@@ -147,16 +147,16 @@ export default function LeaderboardPanel() {
         <Stack spacing={1.2}>
           <Typography variant="h5">Gene segmentation benchmark leaderboard</Typography>
           <Typography color="text.secondary">
-            This benchmark evaluates gene segmentation prediction quality across multiple models using the gene-level metric and BUSCO assessment.
-            Gene-level scoring follows the metric usage and description section of this space, while BUSCO is computed with version 5.7.1
-            using the mammalia_odb10 lineage in offline mode.
+            This benchmark evaluates gene segmentation prediction quality across multiple models using the gene-level metric and the BUSCO tool.
+            Gene-level scoring follows the \"metric usage and description section\" of this space, while BUSCO is computed with version 5.7.1
+            using the mammalia_odb10 lineage that you can load from the repository connected to this space.
           </Typography>
           <Typography color="text.secondary">
-            Researchers may submit model predictions to the permanent benchmark by opening a pull request with a compliant .gff file in
-            <a href="https://github.com/alexeyshmelev/genatator-leaderboard-predictions" target="_blank" rel="noreferrer"> this repository</a>.
-            Because this is a gene segmentation benchmark, the .gff structure must strictly follow repository instructions to ensure correct assessment.
+            You may submit model predictions to the permanent benchmark by opening a pull request with a compliant .gff file in
+            <a href="https://github.com/alexeyshmelev/genatator-leaderboard-predictions" target="_blank" rel="noreferrer">this repository</a>.
+            You can also evaluate your model immediately through the upload panel below. Because this is a gene segmentation benchmark, the .gff
+            structure must strictly follow repository instructions to ensure correct assessment.
           </Typography>
-          <Typography variant="body2" color="text.secondary">Benchmark launch date: {launchDateText}</Typography>
         </Stack>
       </Paper>
 
@@ -182,15 +182,15 @@ export default function LeaderboardPanel() {
         <Typography variant="h6" sx={{ mb: 1 }}>Gene-level metric distribution</Typography>
         <Box sx={{ width: "100%", height: 340 }}>
           <ResponsiveContainer>
-            <BarChart data={geneChartData} margin={{ top: 10, right: 10, bottom: 50, left: 0 }}>
+            <BarChart layout="vertical" data={geneChartData} margin={{ top: 10, right: 10, bottom: 10, left: 20 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-20} textAnchor="end" interval={0} height={80} />
-              <YAxis />
+              <XAxis type="number" />
+              <YAxis type="category" dataKey="name" width={230} />
               <Tooltip />
               <Legend />
-              <Bar dataKey="lncrna_exon" fill={COLORS.geneA} name="exon lncRNA" />
-              <Bar dataKey="mrna_exon" fill={COLORS.geneB} name="exon mRNA" />
-              <Bar dataKey="mrna_cds" fill={COLORS.geneC} name="CDS mRNA" />
+              <Bar dataKey="mrna_cds" stackId="gene" fill={COLORS.geneC} name="CDS mRNA" />
+              <Bar dataKey="mrna_exon" stackId="gene" fill={COLORS.geneB} name="exon mRNA" />
+              <Bar dataKey="lncrna_exon" stackId="gene" fill={COLORS.geneA} name="exon lncRNA" />
             </BarChart>
           </ResponsiveContainer>
         </Box>
@@ -207,8 +207,8 @@ export default function LeaderboardPanel() {
           <TableBody>
             {mergedGeneRows.map((row, idx) => (
               <TableRow key={row.model_id} sx={rowStyle(idx)}>
-                <TableCell>{medal(idx) || idx + 1}</TableCell>
-                <TableCell>{displayName(row.model_id)}</TableCell>
+                <TableCell>{idx + 1}</TableCell>
+                <TableCell>{displayName(row.model_id)} {medal(idx)}</TableCell>
                 <TableCell sx={{ fontWeight: row.lncrna_exon === geneMax.lncrna_exon ? 700 : 400 }}>{row.lncrna_exon}</TableCell>
                 <TableCell sx={{ fontWeight: row.mrna_exon === geneMax.mrna_exon ? 700 : 400 }}>{row.mrna_exon}</TableCell>
                 <TableCell sx={{ fontWeight: row.mrna_cds === geneMax.mrna_cds ? 700 : 400 }}>{row.mrna_cds}</TableCell>
@@ -223,10 +223,10 @@ export default function LeaderboardPanel() {
         <Typography variant="h6" sx={{ mb: 1 }}>BUSCO metric distribution</Typography>
         <Box sx={{ width: "100%", height: 340 }}>
           <ResponsiveContainer>
-            <BarChart data={buscoChartData} margin={{ top: 10, right: 10, bottom: 50, left: 0 }}>
+            <BarChart layout="vertical" data={buscoChartData} margin={{ top: 10, right: 10, bottom: 10, left: 20 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-20} textAnchor="end" interval={0} height={80} />
-              <YAxis />
+              <XAxis type="number" />
+              <YAxis type="category" dataKey="name" width={230} />
               <Tooltip />
               <Legend />
               <Bar dataKey="complete" stackId="busco" fill={COLORS.complete} name="Complete" />
@@ -248,13 +248,13 @@ export default function LeaderboardPanel() {
           <TableBody>
             {mergedBuscoRows.map((row, idx) => (
               <TableRow key={row.model_id} sx={rowStyle(idx)}>
-                <TableCell>{medal(idx) || idx + 1}</TableCell>
-                <TableCell>{displayName(row.model_id)}</TableCell>
+                <TableCell>{idx + 1}</TableCell>
+                <TableCell>{displayName(row.model_id)} {medal(idx)}</TableCell>
                 <TableCell>{row.complete}</TableCell>
                 <TableCell>{row.fragmented}</TableCell>
                 <TableCell>{row.missing}</TableCell>
                 <TableCell><BuscoBar row={row} /></TableCell>
-                <TableCell>{row.colored_gff_url ? <Button size="small" component="a" href={row.colored_gff_url}>Download</Button> : "—"}</TableCell>
+                <TableCell>{row.colored_gff_url ? <Button size="small" component="a" href={row.colored_gff_url}>Download colored GFF</Button> : "—"}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -262,13 +262,13 @@ export default function LeaderboardPanel() {
       </Paper>
 
       <Paper className="glass-card" sx={{ p: 2.4 }}>
-        <Typography variant="h6">Evaluate your own model (temporary)</Typography>
+        <Typography variant="h6">Evaluate your own model</Typography>
         <Typography color="text.secondary" sx={{ mb: 1.2 }}>
           Uploaded predictions are assessed against the current benchmark and appear temporarily in the tables and charts.
           These temporary entries are not stored permanently and disappear after page refresh.
         </Typography>
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
-          <TextField label="Model name" value={modelName} onChange={(e) => setModelName(e.target.value)} fullWidth />
+          <TextField label="Model name" value={modelName} onChange={(e) => setModelName(e.target.value)} sx={{ width: { xs: "100%", md: "35%" } }} />
           <Button component="label" variant="outlined">Upload .gff<input hidden type="file" accept=".gff,.gff3,.txt" onChange={(e) => setPredFile(e.target.files?.[0] || null)} /></Button>
           <Button variant="contained" onClick={submitPrediction} disabled={!predFile}>Submit</Button>
         </Stack>

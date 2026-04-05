@@ -548,11 +548,11 @@ export default function App() {
                 alignItems={{ xs: "flex-start", md: "flex-start" }}
                 spacing={2}
               >
-                <Box sx={{ maxWidth: 860 }}>
+                <Box sx={{ width: "100%" }}>
                   <Typography variant="h3" sx={{ mb: 1 }}>
                     Gene-level segmentation metric
                   </Typography>
-                  <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 840 }}>
+                  <Typography variant="h6" color="text.secondary" sx={{ width: "100%" }}>
                     Implementation of a metric for biologically rigorous evaluation of segmentation structure.
                   </Typography>
                 </Box>
@@ -602,26 +602,28 @@ export default function App() {
               <Stack spacing={1.6}>
                 <SectionTitle title="How the metric is computed" />
                 <Typography color="text.secondary">
-                  The metric compares exact interval reconstruction, not per-base overlap. For every
-                  transcript, contiguous runs of ones are converted into half-open segments such as
-                  <span className="mono"> [1, 3)</span>. A segment is counted as correct only when the
-                  predicted segment set and the target segment set are exactly equal for the selected
-                  segment type.
+                  This metric is designed for gene segmentation evaluation, where biological validity depends on correctly
+                  reconstructing exon and CDS boundaries. A prediction is considered correct only when the exon or CDS segmentation
+                  for a transcript exactly matches the reference segmentation, because even a single boundary shift can alter the
+                  coding frame and compromise downstream interpretation.
                 </Typography>
                 <Typography color="text.secondary">
-                  Two input modes are supported. In Python-like mode, each transcript is represented by
-                  a binary matrix with shape <span className="mono">(transcript length, number of segments)</span>.
-                  Each column corresponds to one selected segment from the
-                  <span className="mono"> segments </span> argument. In GFF mode, the metric extracts
-                  exon and CDS intervals from the uploaded annotations and performs the same exact-set comparison.
+                  The metric supports two complementary input modes. In Python-like mode, you provide transcript-wise binary matrices
+                  together with mapping metadata and specify the segmentation classes through the
+                  <span className="mono"> &lt;segments&gt;</span> parameter. In GFF mode, you provide prediction and reference annotations,
+                  while the same configuration fields
+                  <span className="mono"> &lt;stratifier&gt;</span>, <span className="mono"> &lt;types&gt;</span>, and
+                  <span className="mono"> &lt;segments&gt;</span> define how results are grouped and which transcript classes are evaluated.
+                  This design allows consistent scoring across programmatic experiments and annotation-file workflows, including genes
+                  with multiple transcript isoforms.
                 </Typography>
                 <Typography color="text.secondary">
-                  The output is grouped by the selected <span className="mono">stratifier</span>. This
+                  The output is grouped by the selected <span className="mono">&lt;stratifier&gt;</span>. This
                   means you can count exact matches per transcript type, transcript id, gene id,
                   chromosome, or strand. The implementation accepts the aliases
-                  <span className="mono"> type / transcript_type</span>,
-                  <span className="mono"> transcript / transcript_id</span>, and
-                  <span className="mono"> gene / gene_id</span>.
+                  <span className="mono"> &lt;type&gt; / &lt;transcript_type&gt;</span>,
+                  <span className="mono"> &lt;transcript&gt; / &lt;transcript_id&gt;</span>, and
+                  <span className="mono"> &lt;gene&gt; / &lt;gene_id&gt;</span>.
                 </Typography>
               </Stack>
             </Paper>
@@ -631,12 +633,11 @@ export default function App() {
             <Stack spacing={2.2}>
               <SectionTitle
                 title="Accepted input format"
-                subtitle="These requirements are static and always apply."
               />
 
               <Divider />
 
-              <Grid container spacing={3}>
+              <Grid container spacing={3} sx={{ width: "100%", m: 0 }}>
                 <Grid item xs={12} xl={6}>
                   <Typography variant="h6" sx={{ mb: 1.2 }}>
                     Python-like mode
@@ -654,7 +655,7 @@ export default function App() {
                     </Typography>
                     <Typography color="text.secondary">
                       Each mapping row must have seven fields:
-                      <span className="mono"> transcript_id|gene_id|transcript_type|strand|genome|chrom|coord</span>.
+                      <span className="mono"> &lt;transcript_id&gt;|&lt;gene_id&gt;|&lt;transcript_type&gt;|&lt;strand&gt;|&lt;genome&gt;|&lt;chrom&gt;|&lt;coord&gt;</span>.
                     </Typography>
                     <Typography color="text.secondary">
                       Allowed transcript types:
@@ -674,7 +675,7 @@ export default function App() {
 ]
 
 mapping = [
-  "TX0001|GENE0001|mRNA|+|GRCh38|chr1|1-4"
+  "&lt;TX0001&gt;|&lt;GENE0001&gt;|&lt;mRNA&gt;|&lt;+&gt;|&lt;GRCh38&gt;|&lt;chr1&gt;|&lt;1-4&gt;"
 ]`}</CodePanel>
                   </Box>
                 </Grid>
@@ -685,21 +686,22 @@ mapping = [
                   </Typography>
                   <Stack spacing={1.1}>
                     <Typography color="text.secondary">
-                      The reference GFF must contain gene rows with <span className="mono">ID</span>,
+                      The reference GFF must be a standard genome-oriented .gff file and must contain gene rows with <span className="mono">&lt;ID&gt;</span>,
                       transcript rows of type <span className="mono">mRNA</span> and/or
                       <span className="mono"> lnc_RNA</span> with
-                      <span className="mono"> ID</span> and <span className="mono">Parent</span>,
+                      <span className="mono"> &lt;ID&gt;</span> and <span className="mono">&lt;Parent&gt;</span>,
                       and exon/CDS rows with <span className="mono">Parent=&lt;transcript_id&gt;</span>.
                     </Typography>
                     <Typography color="text.secondary">
                       In this implementation, the prediction GFF uses
-                      <span className="mono"> seqid = transcript_id</span>, and exon/CDS coordinates are
-                      interpreted in transcript-relative coordinates.
+                      <span className="mono"> &lt;seqid&gt; = &lt;transcript_id&gt;</span>, therefore it differs from standard genome-oriented GFF files
+                      where the first column is typically a chromosome identifier. As a consequence, these prediction files are not intended
+                      for direct chromosome-track visualization in tools such as IGV.
                     </Typography>
                     <Typography color="text.secondary">
                       Only the selected transcript types and segment types are scored. The same
-                      <span className="mono"> stratifier</span>, <span className="mono">types</span>, and
-                      <span className="mono"> segments</span> arguments are shared with Python-like mode.
+                      <span className="mono"> &lt;stratifier&gt;</span>, <span className="mono">&lt;types&gt;</span>, and
+                      <span className="mono"> &lt;segments&gt;</span> arguments are shared with Python-like mode.
                     </Typography>
                   </Stack>
                 </Grid>
@@ -729,7 +731,7 @@ mapping = [
 
               {tab === "python" ? (
                 <Stack spacing={2.2}>
-                  <Grid container spacing={2}>
+                  <Grid container spacing={2} sx={{ width: "100%", m: 0 }}>
                     <Grid item xs={12} md={4}>
                       <Typography variant="subtitle2" sx={{ mb: 0.8 }}>
                         Stratifier
@@ -782,7 +784,7 @@ mapping = [
                     </Grid>
                   </Grid>
 
-                  <Grid container spacing={2}>
+                  <Grid container spacing={2} sx={{ width: "100%", m: 0 }}>
                     <Grid item xs={12} xl={6}>
                       <TextField
                         label="preds"
@@ -835,7 +837,7 @@ mapping = [
                 </Stack>
               ) : (
                 <Stack spacing={2.2}>
-                  <Grid container spacing={2}>
+                  <Grid container spacing={2} sx={{ width: "100%", m: 0 }}>
                     <Grid item xs={12} md={4}>
                       <Typography variant="subtitle2" sx={{ mb: 0.8 }}>
                         Stratifier
@@ -888,15 +890,15 @@ mapping = [
                     </Grid>
                   </Grid>
 
-                  <Grid container spacing={2}>
+                  <Grid container spacing={2} sx={{ width: "100%", m: 0 }}>
                     <Grid item xs={12} md={6}>
-                      <Button component="label" fullWidth variant="outlined" startIcon={<UploadFileIcon />}>
+                      <Button component="label" variant="outlined" startIcon={<UploadFileIcon />} sx={{ minWidth: 240 }}>
                         {gffForm.predFileName || "Choose prediction GFF"}
                         <input ref={predFileInputRef} hidden type="file" accept=".gff,.gff3,.txt" onChange={handleFilePick("predFile")} />
                       </Button>
                     </Grid>
                     <Grid item xs={12} md={6}>
-                      <Button component="label" fullWidth variant="outlined" startIcon={<UploadFileIcon />}>
+                      <Button component="label" variant="outlined" startIcon={<UploadFileIcon />} sx={{ minWidth: 240 }}>
                         {gffForm.trueFileName || "Choose reference GFF"}
                         <input ref={trueFileInputRef} hidden type="file" accept=".gff,.gff3,.txt" onChange={handleFilePick("trueFile")} />
                       </Button>

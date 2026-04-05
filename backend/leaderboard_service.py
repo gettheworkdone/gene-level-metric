@@ -119,7 +119,7 @@ class LeaderboardService:
 
             for idx, pred_file in enumerate(prediction_files, start=1):
                 model_id = pred_file.stem
-                self._set_state(stage="Gene-level metric calculation", current_model=model_id, message=f"Gene-level metric calculation {idx}/{len(prediction_files)}")
+                self._set_state(stage="Gene-level metric calculation", current_model=model_id, message=f"Calculating {idx}/{len(prediction_files)}")
                 gene_result = compute_gff_metric(pred_gff=str(pred_file), true_gff=str(true_gff), stratifier="type", types=["mRNA", "lnc_RNA"], segments=["exon", "CDS"])
                 raw = gene_result.get("raw_result", {})
                 gene_row = {
@@ -134,7 +134,7 @@ class LeaderboardService:
 
             for idx, pred_file in enumerate(prediction_files, start=1):
                 model_id = pred_file.stem
-                self._set_state(stage="BUSCO metric calculation", current_model=model_id, message=f"BUSCO metric calculation {idx}/{len(prediction_files)}")
+                self._set_state(stage="BUSCO metric calculation", current_model=model_id, message=f"Calculating {idx}/{len(prediction_files)}")
                 run_dir = self.runs_dir / model_id
                 if run_dir.exists():
                     shutil.rmtree(run_dir)
