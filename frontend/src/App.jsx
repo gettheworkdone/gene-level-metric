@@ -635,7 +635,6 @@ export default function App() {
                 title="Accepted input format"
               />
 
-              <Divider />
 
               <Grid container spacing={3} sx={{ width: "100%", m: 0 }}>
                 <Grid item xs={12} xl={6}>
@@ -675,7 +674,7 @@ export default function App() {
 ]
 
 mapping = [
-  "&lt;TX0001&gt;|&lt;GENE0001&gt;|&lt;mRNA&gt;|&lt;+&gt;|&lt;GRCh38&gt;|&lt;chr1&gt;|&lt;1-4&gt;"
+  "<TX0001>|<GENE0001>|<mRNA>|<+>|<GRCh38>|<chr1>|<1:4>"
 ]`}</CodePanel>
                   </Box>
                 </Grid>

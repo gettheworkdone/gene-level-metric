@@ -35,6 +35,8 @@ class LeaderboardState:
     model_name_map: dict[str, str] = field(default_factory=dict)
     queue_length: int = 0
     queue_current: str | None = None
+    gene_axis_max: int = 100
+    busco_axis_max: int = 275
 
     def to_dict(self, user_gene_rows: list[dict[str, Any]], user_busco_rows: list[dict[str, Any]]) -> dict[str, Any]:
         return {
@@ -53,6 +55,8 @@ class LeaderboardState:
             "model_name_map": self.model_name_map,
             "queue_length": self.queue_length,
             "queue_current": self.queue_current,
+            "gene_axis_max": self.gene_axis_max,
+            "busco_axis_max": self.busco_axis_max,
             "user_gene_rows": user_gene_rows,
             "user_busco_rows": user_busco_rows,
         }
@@ -130,7 +134,14 @@ class LeaderboardService:
                 }
                 gene_row["total_score"] = gene_row["lncrna_exon"] + gene_row["mrna_exon"] + gene_row["mrna_cds"]
                 gene_rows.append(gene_row)
-                self._set_state(completed_models=idx, gene_rows=sorted(gene_rows, key=lambda x: x["total_score"], reverse=True))
+                current_max = max((x["total_score"] for x in gene_rows), default=0)
+                gene_axis_max = 100 if current_max <= 100 else current_max + 100
+                self._set_state(
+                    completed_models=idx,
+                    gene_rows=sorted(gene_rows, key=lambda x: x["total_score"], reverse=True),
+                    gene_axis_max=gene_axis_max,
+                    busco_axis_max=275,
+                )
 
             for idx, pred_file in enumerate(prediction_files, start=1):
                 model_id = pred_file.stem
