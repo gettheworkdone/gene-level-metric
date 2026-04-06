@@ -889,15 +889,15 @@ mapping = [
                     </Grid>
                   </Grid>
 
-                  <Grid container spacing={2} sx={{ width: "100%", m: 0 }}>
-                    <Grid item xs={12} md={6}>
-                      <Button component="label" variant="outlined" startIcon={<UploadFileIcon />} sx={{ minWidth: 240 }}>
+                  <Grid container spacing={2} sx={{ width: "100%", m: 0 }} justifyContent="center">
+                    <Grid item xs={12} md={5}>
+                      <Button component="label" fullWidth variant="outlined" startIcon={<UploadFileIcon />}>
                         {gffForm.predFileName || "Choose prediction GFF"}
                         <input ref={predFileInputRef} hidden type="file" accept=".gff,.gff3,.txt" onChange={handleFilePick("predFile")} />
                       </Button>
                     </Grid>
-                    <Grid item xs={12} md={6}>
-                      <Button component="label" variant="outlined" startIcon={<UploadFileIcon />} sx={{ minWidth: 240 }}>
+                    <Grid item xs={12} md={5}>
+                      <Button component="label" fullWidth variant="outlined" startIcon={<UploadFileIcon />}>
                         {gffForm.trueFileName || "Choose reference GFF"}
                         <input ref={trueFileInputRef} hidden type="file" accept=".gff,.gff3,.txt" onChange={handleFilePick("trueFile")} />
                       </Button>

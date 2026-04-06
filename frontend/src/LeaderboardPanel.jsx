@@ -23,7 +23,6 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-  LabelList,
 } from "recharts";
 
 const COLORS = {
@@ -153,6 +152,11 @@ export default function LeaderboardPanel() {
             using the mammalia_odb10 lineage that you can load from the repository connected to this space.
           </Typography>
           <Typography color="text.secondary">
+            This benchmark is defined on the T2T human genome assembly (GCF_009914755.1) and evaluates all mRNA and lncRNA transcripts (3998)
+            from chromosome 20 (NC_060944.1) across all 980 genes in scope. For BUSCO results, each model row also provides a download option
+            for a colored GFF file that visualizes BUSCO-supported and fragmented prediction regions.
+          </Typography>
+          <Typography color="text.secondary">
             You may submit model predictions to the permanent benchmark by opening a pull request with a compliant .gff file in{" "}
             <a href="https://github.com/alexeyshmelev/genatator-leaderboard-predictions" target="_blank" rel="noreferrer">this repository</a>.
             You can also evaluate your model immediately through the upload panel below. Because this is a gene segmentation benchmark, the .gff
@@ -188,7 +192,7 @@ export default function LeaderboardPanel() {
               <YAxis type="category" dataKey="name" width={230} />
               <Tooltip />
               <Legend />
-              <Bar dataKey="mrna_cds" stackId="gene" fill={COLORS.geneC} name="CDS mRNA"><LabelList dataKey="name" position="right" /></Bar>
+              <Bar dataKey="mrna_cds" stackId="gene" fill={COLORS.geneC} name="CDS mRNA" />
               <Bar dataKey="mrna_exon" stackId="gene" fill={COLORS.geneB} name="exon mRNA" />
               <Bar dataKey="lncrna_exon" stackId="gene" fill={COLORS.geneA} name="exon lncRNA" />
             </BarChart>
@@ -229,7 +233,7 @@ export default function LeaderboardPanel() {
               <YAxis type="category" dataKey="name" width={230} />
               <Tooltip />
               <Legend />
-              <Bar dataKey="complete" stackId="busco" fill={COLORS.complete} name="Complete"><LabelList dataKey="name" position="right" /></Bar>
+              <Bar dataKey="complete" stackId="busco" fill={COLORS.complete} name="Complete" />
               <Bar dataKey="fragmented" stackId="busco" fill={COLORS.fragmented} name="Fragmented" />
               <Bar dataKey="missing" stackId="busco" fill={COLORS.missing} name="Missing" />
             </BarChart>
@@ -269,8 +273,8 @@ export default function LeaderboardPanel() {
         </Typography>
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.2} alignItems="center">
           <TextField label="Model name" value={modelName} onChange={(e) => setModelName(e.target.value)} sx={{ width: { xs: "100%", md: "35%" } }} />
-          <Button component="label" variant="outlined">Upload .gff<input hidden type="file" accept=".gff,.gff3,.txt" onChange={(e) => setPredFile(e.target.files?.[0] || null)} /></Button>
-          <Button variant="contained" onClick={submitPrediction} disabled={!predFile}>Submit</Button>
+          <Button component="label" variant="outlined" sx={{ height: 56 }}>Upload .gff<input hidden type="file" accept=".gff,.gff3,.txt" onChange={(e) => setPredFile(e.target.files?.[0] || null)} /></Button>
+          <Button variant="contained" onClick={submitPrediction} disabled={!predFile} sx={{ height: 56 }}>Submit</Button>
         </Stack>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
           Queue length: {state?.queue_length || 0}. Current workload: {state?.queue_current || "idle"}.
