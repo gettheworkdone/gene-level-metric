@@ -79,7 +79,7 @@ result = metric.compute_gene_level_python(
         ]
     ],
     mapping=[
-        "TX0001|GENE0001|mRNA|+|GRCh38|chr1|1-8",
+        "TX0001|GENE0001|mRNA|+|GRCh38|chr1|1:8",
     ],
     stratifier="type",
     types=["mRNA", "lnc_RNA"],
