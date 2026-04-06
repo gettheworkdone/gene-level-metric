@@ -287,3 +287,12 @@ body::after {
   font-weight: 760;
   line-height: 1.2;
 }
+
+/* make dropdowns opaque */
+.MuiSelect-select {
+  background: #ffffff !important;
+}
+.MuiPopover-paper,
+.MuiMenu-paper {
+  background: #ffffff !important;
+}
