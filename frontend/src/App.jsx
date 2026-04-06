@@ -34,6 +34,7 @@ import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import CodeIcon from "@mui/icons-material/Code";
 import BiotechIcon from "@mui/icons-material/Biotech";
+import LeaderboardPanel from "./LeaderboardPanel";
 
 const PYTHON_PREDS_PLACEHOLDER = `[
   [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [1, 1], [0, 0], [0, 0]],
@@ -45,12 +46,12 @@ const PYTHON_TARGETS_PLACEHOLDER = `[
   [[0, 0], [1, 0], [1, 0], [1, 0], [0, 0], [0, 0], [1, 0], [1, 0], [0, 0], [0, 0]]
 ]`;
 
-const MAPPING_PLACEHOLDER = `TX0001|GENE0001|mRNA|+|GRCh38|chr1|1-8
-TX0002|GENE0002|lnc_RNA|-|GRCh38|chr5|1-10`;
+const MAPPING_PLACEHOLDER = `TX0001|GENE0001|mRNA|+|GRCh38|chr1|1:8
+TX0002|GENE0002|lnc_RNA|-|GRCh38|chr5|1:10`;
 
 const PYTHON_API_SNIPPET = `import evaluate
 
-metric = evaluate.load("shmelev/gene-level-metric")
+metric = evaluate.load("shmelev/gene-level-metric", revision="metric-only")
 
 result = metric.compute_gene_level_python(
     preds=[
@@ -89,11 +90,11 @@ print(result)`;
 
 const GFF_API_SNIPPET = `import evaluate
 
-metric = evaluate.load("shmelev/gene-level-metric")
+metric = evaluate.load("shmelev/gene-level-metric", revision="metric-only")
 
 result = metric.compute_gene_level_gff(
-    pred_gff="predictions.gff",
-    true_gff="reference.gff",
+    pred_gff="<predictions.gff>",
+    true_gff="<reference.gff>",
     stratifier="type",
     types=["mRNA", "lnc_RNA"],
     segments=["exon", "CDS"],
@@ -335,6 +336,7 @@ function DetailTable({ details, segments }) {
 }
 
 export default function App() {
+  const [pageMode, setPageMode] = useState("metric");
   const [tab, setTab] = useState("python");
   const [pythonForm, setPythonForm] = useState(EMPTY_PYTHON_FORM);
   const [gffForm, setGffForm] = useState(EMPTY_GFF_FORM);
@@ -513,12 +515,31 @@ export default function App() {
     <Box>
       <AppBar position="sticky">
         <Toolbar>
-          <Typography variant="h6">Gene-level Metric</Typography>
+          <Typography variant="h6">Gene-level Metric&Leaderboard</Typography>
         </Toolbar>
       </AppBar>
 
       <Container maxWidth="xl" sx={{ py: 4 }}>
         <Stack spacing={3.2}>
+          <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
+            <Button
+              variant={pageMode === "metric" ? "contained" : "outlined"}
+              size="large"
+              onClick={() => setPageMode("metric")}
+            >
+              Metric usage and description
+            </Button>
+            <Button
+              variant={pageMode === "leaderboard" ? "contained" : "outlined"}
+              size="large"
+              onClick={() => setPageMode("leaderboard")}
+            >
+              Leaderboard
+            </Button>
+          </Stack>
+          {pageMode === "leaderboard" ? <LeaderboardPanel /> : null}
+          {pageMode === "metric" ? (
+          <>
           <Paper className="glass-card hero-card" sx={{ p: { xs: 2.4, md: 3.4 } }}>
             <Stack spacing={2.2}>
               <Stack
@@ -527,12 +548,12 @@ export default function App() {
                 alignItems={{ xs: "flex-start", md: "flex-start" }}
                 spacing={2}
               >
-                <Box sx={{ maxWidth: 860 }}>
+                <Box sx={{ width: "100%" }}>
                   <Typography variant="h3" sx={{ mb: 1 }}>
-                    Gene-level exon–intron metric
+                    Gene-level segmentation metric
                   </Typography>
-                  <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 840 }}>
-                    Implementation of a metric for biologically rigorous evaluation of exon–intron structure.
+                  <Typography variant="h6" color="text.secondary" sx={{ width: "100%" }}>
+                    Implementation of a metric for biologically rigorous evaluation of segmentation structure.
                   </Typography>
                 </Box>
               </Stack>
@@ -556,7 +577,7 @@ export default function App() {
                 <SectionTitle
                   icon={<CodeIcon color="primary" />}
                   title="How to use this metric with Evaluate"
-                  subtitle="Load the metric once and call either named entry point below."
+                  subtitle="Load the version you need (python or .gff mode) and run evaluation."
                 />
                 <Box className="api-mode-grid-shell">
                   <Box className="api-mode-grid">
@@ -581,26 +602,28 @@ export default function App() {
               <Stack spacing={1.6}>
                 <SectionTitle title="How the metric is computed" />
                 <Typography color="text.secondary">
-                  The metric compares exact interval reconstruction, not per-base overlap. For every
-                  transcript, contiguous runs of ones are converted into half-open segments such as
-                  <span className="mono"> [1, 3)</span>. A segment is counted as correct only when the
-                  predicted segment set and the target segment set are exactly equal for the selected
-                  segment type.
+                  This metric is designed for gene segmentation evaluation, where biological validity depends on correctly
+                  reconstructing exon and CDS boundaries. A prediction is considered correct only when the exon or CDS segmentation
+                  for a transcript exactly matches the reference segmentation, because even a single boundary shift can alter the
+                  coding frame and compromise downstream interpretation.
                 </Typography>
                 <Typography color="text.secondary">
-                  Two input modes are supported. In Python-like mode, each transcript is represented by
-                  a binary matrix with shape <span className="mono">(transcript length, number of segments)</span>.
-                  Each column corresponds to one selected segment from the
-                  <span className="mono"> segments </span> argument. In GFF mode, the metric extracts
-                  exon and CDS intervals from the uploaded annotations and performs the same exact-set comparison.
+                  The metric supports two complementary input modes. In Python-like mode, you provide transcript-wise binary matrices
+                  together with mapping metadata and specify the segmentation classes through the
+                  <span className="mono"> &lt;segments&gt;</span> parameter. In GFF mode, you provide prediction and reference annotations,
+                  while the same configuration fields
+                  <span className="mono"> &lt;stratifier&gt;</span>, <span className="mono"> &lt;types&gt;</span>, and
+                  <span className="mono"> &lt;segments&gt;</span> define how results are grouped and which transcript classes are evaluated.
+                  This design allows consistent scoring across programmatic experiments and annotation-file workflows, including genes
+                  with multiple transcript isoforms.
                 </Typography>
                 <Typography color="text.secondary">
-                  The output is grouped by the selected <span className="mono">stratifier</span>. This
+                  The output is grouped by the selected <span className="mono">&lt;stratifier&gt;</span>. This
                   means you can count exact matches per transcript type, transcript id, gene id,
                   chromosome, or strand. The implementation accepts the aliases
-                  <span className="mono"> type / transcript_type</span>,
-                  <span className="mono"> transcript / transcript_id</span>, and
-                  <span className="mono"> gene / gene_id</span>.
+                  <span className="mono"> &lt;type&gt; / &lt;transcript_type&gt;</span>,
+                  <span className="mono"> &lt;transcript&gt; / &lt;transcript_id&gt;</span>, and
+                  <span className="mono"> &lt;gene&gt; / &lt;gene_id&gt;</span>.
                 </Typography>
               </Stack>
             </Paper>
@@ -610,12 +633,10 @@ export default function App() {
             <Stack spacing={2.2}>
               <SectionTitle
                 title="Accepted input format"
-                subtitle="These requirements are static and always apply."
               />
 
-              <Divider />
 
-              <Grid container spacing={3}>
+              <Grid container spacing={3} sx={{ width: "100%", m: 0 }}>
                 <Grid item xs={12} xl={6}>
                   <Typography variant="h6" sx={{ mb: 1.2 }}>
                     Python-like mode
@@ -633,7 +654,7 @@ export default function App() {
                     </Typography>
                     <Typography color="text.secondary">
                       Each mapping row must have seven fields:
-                      <span className="mono"> transcript_id|gene_id|transcript_type|strand|genome|chrom|coord</span>.
+                      <span className="mono"> &lt;transcript_id&gt;|&lt;gene_id&gt;|&lt;transcript_type&gt;|&lt;strand&gt;|&lt;genome&gt;|&lt;chrom&gt;|&lt;coord&gt;</span>.
                     </Typography>
                     <Typography color="text.secondary">
                       Allowed transcript types:
@@ -653,7 +674,7 @@ export default function App() {
 ]
 
 mapping = [
-  "TX0001|GENE0001|mRNA|+|GRCh38|chr1|1-4"
+  "<TX0001>|<GENE0001>|<mRNA>|<+>|<GRCh38>|<chr1>|<1:4>"
 ]`}</CodePanel>
                   </Box>
                 </Grid>
@@ -664,21 +685,22 @@ mapping = [
                   </Typography>
                   <Stack spacing={1.1}>
                     <Typography color="text.secondary">
-                      The reference GFF must contain gene rows with <span className="mono">ID</span>,
+                      The reference GFF must be a standard genome-oriented .gff file and must contain gene rows with <span className="mono">&lt;ID&gt;</span>,
                       transcript rows of type <span className="mono">mRNA</span> and/or
                       <span className="mono"> lnc_RNA</span> with
-                      <span className="mono"> ID</span> and <span className="mono">Parent</span>,
+                      <span className="mono"> &lt;ID&gt;</span> and <span className="mono">&lt;Parent&gt;</span>,
                       and exon/CDS rows with <span className="mono">Parent=&lt;transcript_id&gt;</span>.
                     </Typography>
                     <Typography color="text.secondary">
                       In this implementation, the prediction GFF uses
-                      <span className="mono"> seqid = transcript_id</span>, and exon/CDS coordinates are
-                      interpreted in transcript-relative coordinates.
+                      <span className="mono"> &lt;seqid&gt; = &lt;transcript_id&gt;</span>, therefore it differs from standard genome-oriented GFF files
+                      where the first column is typically a chromosome identifier. As a consequence, these prediction files are not intended
+                      for direct chromosome-track visualization in tools such as IGV.
                     </Typography>
                     <Typography color="text.secondary">
                       Only the selected transcript types and segment types are scored. The same
-                      <span className="mono"> stratifier</span>, <span className="mono">types</span>, and
-                      <span className="mono"> segments</span> arguments are shared with Python-like mode.
+                      <span className="mono"> &lt;stratifier&gt;</span>, <span className="mono">&lt;types&gt;</span>, and
+                      <span className="mono"> &lt;segments&gt;</span> arguments are shared with Python-like mode.
                     </Typography>
                   </Stack>
                 </Grid>
@@ -708,7 +730,7 @@ mapping = [
 
               {tab === "python" ? (
                 <Stack spacing={2.2}>
-                  <Grid container spacing={2}>
+                  <Grid container spacing={2} sx={{ width: "100%", m: 0 }}>
                     <Grid item xs={12} md={4}>
                       <Typography variant="subtitle2" sx={{ mb: 0.8 }}>
                         Stratifier
@@ -761,7 +783,7 @@ mapping = [
                     </Grid>
                   </Grid>
 
-                  <Grid container spacing={2}>
+                  <Grid container spacing={2} sx={{ width: "100%", m: 0 }}>
                     <Grid item xs={12} xl={6}>
                       <TextField
                         label="preds"
@@ -814,7 +836,7 @@ mapping = [
                 </Stack>
               ) : (
                 <Stack spacing={2.2}>
-                  <Grid container spacing={2}>
+                  <Grid container spacing={2} sx={{ width: "100%", m: 0 }}>
                     <Grid item xs={12} md={4}>
                       <Typography variant="subtitle2" sx={{ mb: 0.8 }}>
                         Stratifier
@@ -867,14 +889,14 @@ mapping = [
                     </Grid>
                   </Grid>
 
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
+                  <Grid container spacing={2} sx={{ width: "100%", m: 0 }} justifyContent="center">
+                    <Grid item xs={12} md={5}>
                       <Button component="label" fullWidth variant="outlined" startIcon={<UploadFileIcon />}>
                         {gffForm.predFileName || "Choose prediction GFF"}
                         <input ref={predFileInputRef} hidden type="file" accept=".gff,.gff3,.txt" onChange={handleFilePick("predFile")} />
                       </Button>
                     </Grid>
-                    <Grid item xs={12} md={6}>
+                    <Grid item xs={12} md={5}>
                       <Button component="label" fullWidth variant="outlined" startIcon={<UploadFileIcon />}>
                         {gffForm.trueFileName || "Choose reference GFF"}
                         <input ref={trueFileInputRef} hidden type="file" accept=".gff,.gff3,.txt" onChange={handleFilePick("trueFile")} />
@@ -904,7 +926,7 @@ mapping = [
             </Stack>
           </Paper>
 
-          {result ? (
+          {pageMode === "metric" && result ? (
             <Paper className="glass-card" sx={{ p: { xs: 2.2, md: 3 } }}>
               <Stack spacing={2.2}>
                 <SectionTitle
@@ -951,10 +973,12 @@ mapping = [
               </Stack>
             </Paper>
           ) : null}
+          </>
+          ) : null}
         </Stack>
       </Container>
 
-      {result ? (
+      {pageMode === "metric" && result ? (
         <Box className="details-panel">
           <Box className="details-panel-inner">
             <Stack spacing={2.2}>
