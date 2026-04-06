@@ -152,9 +152,10 @@ export default function LeaderboardPanel() {
             using the mammalia_odb10 lineage that you can load from the repository connected to this space.
           </Typography>
           <Typography color="text.secondary">
-            This benchmark is defined on the T2T human genome assembly (GCF_009914755.1) and evaluates all mRNA and lncRNA transcripts (3998)
-            from chromosome 20 (NC_060944.1) across all 980 genes in scope. For BUSCO results, each model row also provides a download option
-            for a colored GFF file that visualizes BUSCO-supported and fragmented prediction regions.
+            This benchmark is defined on the T2T human genome assembly (GCF_009914755.1) and evaluates all 3998 mRNA and lncRNA transcripts
+            from chromosome 20 (NC_060944.1) across all 980 genes in scope. For BUSCO results, we provide a download option that returns
+            model predictions colored at transcript level as complete, fragmented, or not found. This output is ready for visualization in
+            IGV genome browser and supports visual inspection of predicted structures.
           </Typography>
           <Typography color="text.secondary">
             You may submit model predictions to the permanent benchmark by opening a pull request with a compliant .gff file in{" "}

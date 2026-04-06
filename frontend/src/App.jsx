@@ -674,7 +674,7 @@ export default function App() {
 ]
 
 mapping = [
-  "<TX0001>|<GENE0001>|<mRNA>|<+>|<GRCh38>|<chr1>|<1:4>"
+  "TX0001|GENE0001|mRNA|+|GRCh38|chr1|1:4"
 ]`}</CodePanel>
                   </Box>
                 </Grid>
