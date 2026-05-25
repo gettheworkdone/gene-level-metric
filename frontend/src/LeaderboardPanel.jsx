@@ -41,7 +41,6 @@ const MENU_SECTIONS = [
   ["busco-metric-distribution", "BUSCO metric distribution"],
   ["leaderboard-description", "Leaderboard description"],
   ["evaluate-your-own-model", "Evaluate your own model"],
-  ["benchmark-launch-date", "Benchmark launch date"],
 ];
 
 function PanelTitle({ children, sx = {} }) {
