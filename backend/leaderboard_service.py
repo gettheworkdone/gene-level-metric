@@ -236,6 +236,9 @@ class LeaderboardService:
                 with self._lock:
                     self._user_gene_rows = [r for r in self._user_gene_rows if r["model_id"] != job["model_name"]] + [gene_row]
                     self._user_busco_rows = [r for r in self._user_busco_rows if r["model_id"] != job["model_name"]] + [busco_row]
+            except Exception as exc:
+                with self._lock:
+                    self._state.message = f"Submission failed for {job.get('model_name', 'user submission')}: {exc}"
             finally:
                 with self._lock:
                     self._state.queue_current = None

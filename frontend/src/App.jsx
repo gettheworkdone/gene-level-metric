@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   Alert,
   AppBar,
@@ -11,6 +11,7 @@ import {
   FormControlLabel,
   FormGroup,
   Grid,
+  IconButton,
   MenuItem,
   Paper,
   Select,
@@ -26,14 +27,14 @@ import {
   TableRow,
   TextField,
   Toolbar,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import ScienceIcon from "@mui/icons-material/Science";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import CodeIcon from "@mui/icons-material/Code";
-import BiotechIcon from "@mui/icons-material/Biotech";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import LeaderboardPanel from "./LeaderboardPanel";
 
 const PYTHON_PREDS_PLACEHOLDER = `[
@@ -211,11 +212,64 @@ function segmentListToString(segments) {
   return segments.map(([start, end]) => `[${start}, ${end})`).join(", ");
 }
 
-function CodePanel({ children, compact = false }) {
-  const classes = compact ? "code-panel code-panel--compact mono" : "code-panel mono";
+function PythonSnippet({ code }) {
+  const KEYWORDS = new Set(["import", "from", "as", "True", "False", "None", "for", "in", "if", "else", "elif", "print", "and", "or", "not"]);
+  const lines = code.split("\n");
   return (
+    <>
+      {lines.map((line, lineIdx) => {
+        const tokens = line.split(/(\s+|"[^"]*"|'[^']*'|#.*$|\b[A-Za-z_][A-Za-z0-9_]*\b|\d+)/g);
+        return (
+          <React.Fragment key={`line-${lineIdx}`}>
+            {tokens.map((token, tokenIdx) => {
+              if (!token) return null;
+              let className = "";
+              if (token.startsWith("#")) className = "py-comment";
+              else if (/^"[^"]*"|'[^']*'$/.test(token)) className = "py-string";
+              else if (/^\d+$/.test(token)) className = "py-number";
+              else if (KEYWORDS.has(token)) className = "py-keyword";
+              return <span className={className} key={`line-${lineIdx}-token-${tokenIdx}`}>{token}</span>;
+            })}
+            {lineIdx < lines.length - 1 ? "\n" : null}
+          </React.Fragment>
+        );
+      })}
+    </>
+  );
+}
+
+function CodePanel({ children, compact = false, python = false, copyable = false }) {
+  const [copied, setCopied] = useState(false);
+  const code = typeof children === "string" ? children : String(children ?? "");
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch {
+      setCopied(false);
+    }
+  }, [code]);
+
+  const classes = ["code-panel", "mono", compact ? "code-panel--compact" : "", python ? "code-panel--python" : ""].filter(Boolean).join(" ");
+
+  const body = (
     <Box component="pre" className={classes}>
-      {children}
+      <code>{python ? <PythonSnippet code={code} /> : code}</code>
+    </Box>
+  );
+
+  if (!copyable && !python) return body;
+
+  return (
+    <Box className="code-panel-wrapper">
+      <Tooltip title={copied ? "Copied" : "Copy code"}>
+        <IconButton size="small" className="code-copy-btn" onClick={handleCopy} aria-label="Copy code snippet">
+          <ContentCopyIcon fontSize="inherit" />
+        </IconButton>
+      </Tooltip>
+      {body}
     </Box>
   );
 }
@@ -336,7 +390,7 @@ function DetailTable({ details, segments }) {
 }
 
 export default function App() {
-  const [pageMode, setPageMode] = useState("metric");
+  const [pageMode, setPageMode] = useState("leaderboard");
   const [tab, setTab] = useState("python");
   const [pythonForm, setPythonForm] = useState(EMPTY_PYTHON_FORM);
   const [gffForm, setGffForm] = useState(EMPTY_GFF_FORM);
@@ -515,7 +569,7 @@ export default function App() {
     <Box>
       <AppBar position="sticky">
         <Toolbar>
-          <Typography variant="h6">Gene-level Metric&Leaderboard</Typography>
+          <Typography variant="h6">Gene-level Metric and Leaderboard</Typography>
         </Toolbar>
       </AppBar>
 
@@ -523,18 +577,18 @@ export default function App() {
         <Stack spacing={3.2}>
           <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
             <Button
-              variant={pageMode === "metric" ? "contained" : "outlined"}
-              size="large"
-              onClick={() => setPageMode("metric")}
-            >
-              Metric usage and description
-            </Button>
-            <Button
               variant={pageMode === "leaderboard" ? "contained" : "outlined"}
               size="large"
               onClick={() => setPageMode("leaderboard")}
             >
               Leaderboard
+            </Button>
+            <Button
+              variant={pageMode === "metric" ? "contained" : "outlined"}
+              size="large"
+              onClick={() => setPageMode("metric")}
+            >
+              Metrics description
             </Button>
           </Stack>
           {pageMode === "leaderboard" ? <LeaderboardPanel /> : null}
@@ -553,7 +607,7 @@ export default function App() {
                     Gene-level segmentation metric
                   </Typography>
                   <Typography variant="h6" color="text.secondary" sx={{ width: "100%" }}>
-                    Implementation of a metric for biologically rigorous evaluation of segmentation structure.
+                    Implementation of a metric for biologically rigorous evaluation of transcript-internal structure inference.
                   </Typography>
                 </Box>
               </Stack>
@@ -575,7 +629,6 @@ export default function App() {
             <Paper className="glass-card" sx={{ p: { xs: 2.2, md: 3 } }}>
               <Stack spacing={2.4}>
                 <SectionTitle
-                  icon={<CodeIcon color="primary" />}
                   title="How to use this metric with Evaluate"
                   subtitle="Load the version you need (python or .gff mode) and run evaluation."
                 />
@@ -585,13 +638,13 @@ export default function App() {
                       <Typography variant="subtitle1" sx={{ mb: 1, textAlign: "center" }}>
                         Python-like mode
                       </Typography>
-                      <CodePanel>{PYTHON_API_SNIPPET}</CodePanel>
+                      <CodePanel python copyable>{PYTHON_API_SNIPPET}</CodePanel>
                     </Box>
                     <Box className="api-mode-card">
                       <Typography variant="subtitle1" sx={{ mb: 1, textAlign: "center" }}>
                         GFF mode
                       </Typography>
-                      <CodePanel>{GFF_API_SNIPPET}</CodePanel>
+                      <CodePanel python copyable>{GFF_API_SNIPPET}</CodePanel>
                     </Box>
                   </Box>
                 </Box>
@@ -711,7 +764,6 @@ mapping = [
           <Paper className="glass-card" sx={{ p: { xs: 2.2, md: 3 } }}>
             <Stack spacing={2.4}>
               <SectionTitle
-                icon={<CalculateIcon color="primary" />}
                 title="Playground"
                 subtitle="Choose the input mode, provide the required fields, and run the metric."
               />
@@ -930,7 +982,6 @@ mapping = [
             <Paper className="glass-card" sx={{ p: { xs: 2.2, md: 3 } }}>
               <Stack spacing={2.2}>
                 <SectionTitle
-                  icon={<BiotechIcon color="primary" />}
                   title="Metric result"
                   subtitle={`Mode: ${result.mode}. Stratifier: ${result.stratifier}.`}
                 />
@@ -983,7 +1034,6 @@ mapping = [
           <Box className="details-panel-inner">
             <Stack spacing={2.2}>
               <SectionTitle
-                icon={<BiotechIcon color="primary" />}
                 title="Per-transcript details"
               />
               <DetailTable details={result.details} segments={activeSegments} />
