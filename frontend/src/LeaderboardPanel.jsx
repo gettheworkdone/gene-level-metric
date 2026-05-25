@@ -240,8 +240,12 @@ export default function LeaderboardPanel() {
         {submitMessage ? <Alert severity="info" sx={{ mt: 1 }}>{submitMessage}</Alert> : null}
       </Paper>
 
-      <Paper className="glass-card" sx={{ p: 2.4 }}>
-        <Typography variant="body2" color="text.secondary">Benchmark launch date: {launchDateText}</Typography>
+      <Paper className="glass-card" id="evaluate-your-own-model" sx={{ p: 2.4, scrollMarginTop: "132px" }}>
+        <PanelTitle>Evaluate your own model</PanelTitle>
+        <Typography color="text.secondary" sx={{ mb: 1.2 }}>Uploaded predictions are assessed against the current benchmark and appear temporarily in the tables and charts. These temporary entries are not stored permanently and disappear after page refresh.</Typography>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={1.2} alignItems="center"><TextField label="Model name" value={modelName} onChange={(e) => setModelName(e.target.value)} sx={{ width: { xs: "100%", md: "35%" } }} /><Button component="label" variant="outlined" sx={{ height: 56 }}>Upload .gff<input hidden type="file" accept=".gff,.gff3,.txt" onChange={(e) => setPredFile(e.target.files?.[0] || null)} /></Button><Button variant="contained" onClick={submitPrediction} disabled={!predFile} sx={{ height: 56 }}>Submit</Button></Stack>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Queue length: {state?.queue_length || 0}.</Typography>
+        {submitMessage ? <Alert severity="info" sx={{ mt: 1 }}>{submitMessage}</Alert> : null}
       </Paper>
     </Stack>
   );
