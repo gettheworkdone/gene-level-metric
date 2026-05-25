@@ -226,11 +226,18 @@ export default function LeaderboardPanel() {
           <Typography color="text.secondary">This benchmark evaluates gene segmentation prediction quality across multiple models using the gene-level metric and the BUSCO tool.</Typography>
           <Typography color="text.secondary">Gene-level scoring follows the "Metrics description" section of this Space, while BUSCO is computed with version 5.7.1 using the locally provided mammalia_odb10 lineage directory.</Typography>
           <Typography color="text.secondary">This benchmark is defined on the T2T human genome assembly (GCF_009914755.1) and evaluates all 3998 mRNA and lncRNA transcripts from chromosome 20 (NC_060944.1) across all 980 genes in scope.</Typography>
-          <Typography color="text.secondary">Important input assumption: each tested model is expected to receive only the DNA sequence of an individual transcript as input. The model input must not include intergenic regions, neighboring genes, or other genomic context. Accordingly, submitted prediction GFF files are transcript-coordinate annotations: the seqid column should identify the transcript being annotated, not a chromosome interval containing intergenic sequence.</Typography>
+          <Typography color="text.secondary" sx={{ fontWeight: 700 }}>Important input assumption: each tested model is expected to receive only the DNA sequence of an individual transcript as input. The model input must not include intergenic regions, neighboring genes, or other genomic context. Accordingly, submitted prediction GFF files are transcript-coordinate annotations: the seqid column should identify the transcript being annotated, not a chromosome interval containing intergenic sequence.</Typography>
           <Typography color="text.secondary">For BUSCO results, we provide a download option that returns model predictions colored at transcript level as complete, fragmented, or not found. This output is ready for visualization in IGV genome browser and supports visual inspection of predicted structures.</Typography>
           <Typography color="text.secondary">You may submit model predictions to the permanent benchmark by opening a pull request with a compliant .gff file in <a href="https://github.com/alexeyshmelev/genatator-leaderboard-predictions" target="_blank" rel="noreferrer">this repository</a>. You can also evaluate your model immediately through the upload panel below.</Typography>
-          <Typography variant="body2" color="text.secondary">Benchmark launch date: {launchDateText}</Typography>
         </Stack>
+      </Paper>
+
+      <Paper className="glass-card" id="evaluate-your-own-model" sx={{ p: 2.4, scrollMarginTop: "132px" }}>
+        <PanelTitle>Evaluate your own model</PanelTitle>
+        <Typography color="text.secondary" sx={{ mb: 1.2 }}>Uploaded predictions are assessed against the current benchmark and appear temporarily in the tables and charts. These temporary entries are not stored permanently and disappear after page refresh.</Typography>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={1.2} alignItems="center"><TextField label="Model name" value={modelName} onChange={(e) => setModelName(e.target.value)} sx={{ width: { xs: "100%", md: "35%" } }} /><Button component="label" variant="outlined" sx={{ height: 56 }}>Upload .gff<input hidden type="file" accept=".gff,.gff3,.txt" onChange={(e) => setPredFile(e.target.files?.[0] || null)} /></Button><Button variant="contained" onClick={submitPrediction} disabled={!predFile} sx={{ height: 56 }}>Submit</Button></Stack>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Queue length: {state?.queue_length || 0}.</Typography>
+        {submitMessage ? <Alert severity="info" sx={{ mt: 1 }}>{submitMessage}</Alert> : null}
       </Paper>
 
       <Paper className="glass-card" id="evaluate-your-own-model" sx={{ p: 2.4, scrollMarginTop: "132px" }}>
