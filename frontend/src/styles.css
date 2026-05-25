@@ -296,3 +296,29 @@ body::after {
 .MuiMenu-paper {
   background: #ffffff !important;
 }
+
+.code-panel-wrapper {
+  position: relative;
+}
+
+.code-copy-btn {
+  position: absolute !important;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  border: 1px solid rgba(15, 118, 110, 0.2) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: #0f766e !important;
+}
+
+.code-panel--python {
+  padding-top: 2.6rem;
+  white-space: pre;
+  word-break: normal;
+  overflow-x: auto;
+}
+
+.code-panel--python .py-comment { color: #6b7280; }
+.code-panel--python .py-keyword { color: #7c3aed; font-weight: 700; }
+.code-panel--python .py-string { color: #0f766e; }
+.code-panel--python .py-number { color: #1d4ed8; }
