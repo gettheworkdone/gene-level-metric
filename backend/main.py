@@ -133,13 +133,14 @@ def leaderboard_colored_gff(model_id: str) -> Response:
     return FileResponse(path, media_type="text/plain", filename=f"{model_id}_busco_colored.gff")
 
 
+@app.get("/api/leaderboard/submission/{submission_id}")
+def leaderboard_submission_status(submission_id: str) -> dict[str, Any]:
+    return LEADERBOARD.submission_status(submission_id)
+
+
 @app.get("/api/leaderboard/user-colored-gff/{submission_id}")
 def leaderboard_user_colored_gff(submission_id: str) -> Response:
-    try:
-        path = LEADERBOARD.get_user_colored_gff_path(submission_id)
-    except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return FileResponse(path, media_type="text/plain", filename=f"user_{submission_id}_busco_colored.gff")
+    raise HTTPException(status_code=404, detail="Temporary user colored GFF files are session-only and are not stored on the backend.")
 
 
 @app.get("/", response_model=None)

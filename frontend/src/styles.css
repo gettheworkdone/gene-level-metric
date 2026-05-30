@@ -322,3 +322,69 @@ body::after {
 .code-panel--python .py-keyword { color: #7c3aed; font-weight: 700; }
 .code-panel--python .py-string { color: #0f766e; }
 .code-panel--python .py-number { color: #1d4ed8; }
+
+:root {
+  --leaderboard-link-color: #00796b;
+  --leaderboard-link-hover-color: #005f56;
+}
+
+.leaderboard-link {
+  color: var(--leaderboard-link-color, #00796b);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  text-decoration-style: solid;
+}
+
+.leaderboard-link:hover {
+  color: var(--leaderboard-link-hover-color, #005f56);
+}
+
+.leaderboard-link:visited {
+  color: var(--leaderboard-link-color, #00796b);
+}
+
+.metric-tooltip {
+  position: fixed;
+  z-index: 9999;
+  max-width: 420px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  border: 1px solid #b9d8d6;
+  background: #ffffff;
+  color: #12201d;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+  font-size: 13px;
+  line-height: 1.45;
+  pointer-events: none;
+  white-space: normal;
+}
+
+.metric-tooltip strong {
+  font-weight: 700;
+}
+
+.metric-tooltip-target {
+  cursor: default;
+  text-decoration: none;
+  border-bottom: none;
+}
+
+.metric-tooltip-target:hover {
+  text-decoration: none;
+  border-bottom: none;
+}
+
+.score-calc-animation { display: inline-flex; align-items: center; gap: 10px; color: #0f766e; }
+.score-calc-animation .orb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #0f766e;
+  animation: pulse-academic 1.1s ease-in-out infinite;
+}
+@keyframes pulse-academic {
+  0% { transform: scale(0.7); opacity: 0.5; }
+  50% { transform: scale(1.4); opacity: 1; }
+  100% { transform: scale(0.7); opacity: 0.5; }
+}
