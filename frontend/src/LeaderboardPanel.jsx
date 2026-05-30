@@ -43,7 +43,6 @@ const LEADERBOARD_SECTIONS = [
   ["busco-metric-distribution", "BUSCO metric distribution"],
   ["leaderboard-description", "Leaderboard description"],
   ["evaluate-your-own-model", "Evaluate your own model"],
-  ["benchmark-launch-date", "Benchmark launch date"],
 ];
 
 const REPOSITORY_URL = "https://github.com/alexeyshmelev/genatator-leaderboard-predictions";
@@ -179,7 +178,24 @@ export default function LeaderboardPanel() {
   }), [mergedGeneRows]);
 
   const displayName = (modelId) => temporaryNameMap[modelId] || state?.model_name_map?.[modelId] || modelId;
-  const referenceUrl = (row) => row.reference_url || state?.model_reference_map?.[row.model_id] || null;
+  const modelReferenceMap = state?.model_reference_map || {};
+  const compactModelKey = (value) => String(value || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  const referenceUrl = (row) => {
+    if (row.reference_url) return row.reference_url;
+
+    const modelId = row.model_id;
+    const display = displayName(modelId);
+
+    return (
+      modelReferenceMap[modelId] ||
+      modelReferenceMap[String(modelId || "").toLowerCase()] ||
+      modelReferenceMap[compactModelKey(modelId)] ||
+      modelReferenceMap[display] ||
+      modelReferenceMap[String(display || "").toLowerCase()] ||
+      modelReferenceMap[compactModelKey(display)] ||
+      null
+    );
+  };
 
   const renderModelName = (row, idx) => {
     const name = displayName(row.model_id);

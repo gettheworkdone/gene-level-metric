@@ -22,6 +22,73 @@ PREDICTIONS_REPO_URL = (
 TEMP_SUBMISSION_TTL_SECONDS = 30 * 60
 
 
+def _plain_model_key(value: object) -> str:
+    text = str(value or "").strip().lower()
+    if not text:
+        return ""
+    return "".join(ch for ch in text if ch.isalnum())
+
+
+def _reference_aliases(value: object) -> set[str]:
+    text = str(value or "").strip()
+    if not text:
+        return set()
+
+    aliases = {
+        text,
+        text.lower(),
+        Path(text).name,
+        Path(text).name.lower(),
+        Path(text).stem,
+        Path(text).stem.lower(),
+    }
+
+    compact = {_plain_model_key(alias) for alias in aliases}
+    aliases.update(alias for alias in compact if alias)
+    return {alias for alias in aliases if alias}
+
+
+def _extract_reference_url(value: object) -> str | None:
+    if isinstance(value, str):
+        url = value.strip()
+        return url or None
+
+    if isinstance(value, dict):
+        for key in ("reference_url", "url", "paper_url", "link", "paper"):
+            url = value.get(key)
+            if isinstance(url, str) and url.strip():
+                return url.strip()
+
+    return None
+
+
+def _lookup_reference_url(
+    reference_map: dict[str, str], *candidates: object
+) -> str | None:
+    for candidate in candidates:
+        for alias in _reference_aliases(candidate):
+            url = reference_map.get(alias)
+            if url:
+                return url
+    return None
+
+
+def _display_name_from_mapping(name_map: dict, model_id: str, pred_file: Path) -> str:
+    value = name_map.get(model_id)
+    if value is None:
+        value = name_map.get(pred_file.name)
+
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+
+    if isinstance(value, dict):
+        display_name = value.get("display_name") or value.get("name") or value.get("label")
+        if isinstance(display_name, str) and display_name.strip():
+            return display_name.strip()
+
+    return model_id
+
+
 @dataclass
 class LeaderboardState:
     running: bool = False
@@ -166,9 +233,13 @@ class LeaderboardService:
                     types=["mRNA", "lnc_RNA"],
                     segments=["exon", "CDS"],
                 ).get("raw_result", {})
+                display_name = _display_name_from_mapping(name_map, model_id, pred_file)
+                reference_url = _lookup_reference_url(
+                    reference_map, model_id, pred_file.stem, pred_file.name, display_name
+                )
                 row = {
                     "model_id": model_id,
-                    "reference_url": reference_map.get(model_id),
+                    "reference_url": reference_url,
                     "lncrna_exon": int((raw.get("lnc_RNA") or [0, 0])[0]),
                     "mrna_exon": int((raw.get("mRNA") or [0, 0])[0]),
                     "mrna_cds": int((raw.get("mRNA") or [0, 0])[1]),
@@ -208,10 +279,14 @@ class LeaderboardService:
                     busco_exe="busco",
                     output_gff_path=str(run_dir / "busco_colored_prediction.gff"),
                 )
+                display_name = _display_name_from_mapping(name_map, model_id, pred_file)
+                reference_url = _lookup_reference_url(
+                    reference_map, model_id, pred_file.stem, pred_file.name, display_name
+                )
                 busco_rows.append(
                     {
                         "model_id": model_id,
-                        "reference_url": reference_map.get(model_id),
+                        "reference_url": reference_url,
                         "complete": int(busco_result["Complete"]),
                         "fragmented": int(busco_result["Fragmented"]),
                         "missing": int(busco_result["Missing"]),
@@ -361,7 +436,11 @@ class LeaderboardService:
             )
         predictions_dir = self.pred_repo_dir / "predictions"
         mapping_file = self.pred_repo_dir / "name_mapping.json"
-        references_file = self.pred_repo_dir / "references.json"
+        reference_file_candidates = [
+            self.pred_repo_dir / "reference.json",
+            self.pred_repo_dir / "references.json",
+        ]
+        references_file = next((p for p in reference_file_candidates if p.exists()), None)
         if not predictions_dir.exists():
             raise FileNotFoundError("predictions folder is missing in predictions repo")
         name_map = (
@@ -371,27 +450,26 @@ class LeaderboardService:
         )
         raw_reference_map = (
             json.loads(references_file.read_text(encoding="utf-8"))
-            if references_file.exists()
+            if references_file is not None
             else {}
         )
         reference_map: dict[str, str] = {}
         for key, value in raw_reference_map.items():
-            if isinstance(value, str):
-                url = value
-            elif isinstance(value, dict):
-                url = (
-                    value.get("reference_url")
-                    or value.get("url")
-                    or value.get("paper_url")
-                    or value.get("link")
-                )
-            else:
-                url = None
-            if url:
-                reference_map[Path(key).stem] = str(url)
+            url = _extract_reference_url(value)
+            if not url:
+                continue
+
+            for alias in _reference_aliases(key):
+                reference_map[alias] = url
+
+        prediction_files = sorted(predictions_dir.glob("*.gff"))
+        model_name_map = {
+            pred_file.stem: _display_name_from_mapping(name_map, pred_file.stem, pred_file)
+            for pred_file in prediction_files
+        }
         return (
-            sorted(predictions_dir.glob("*.gff")),
-            {Path(k).stem: v for k, v in name_map.items()},
+            prediction_files,
+            model_name_map,
             reference_map,
         )
 
