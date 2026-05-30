@@ -79,8 +79,6 @@ class LeaderboardService:
             self._cleanup_expired_submissions()
             return self._state.to_dict()
 
-    def status(self) -> dict[str, Any]:
-        with self._lock: self._cleanup_expired_submissions(); return self._state.to_dict()
     def start(self) -> dict[str, Any]:
         with self._lock:
             if self._state.running:

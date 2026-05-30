@@ -13,7 +13,6 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Tooltip as MuiTooltip,
   Typography,
 } from "@mui/material";
 import {
@@ -44,11 +43,12 @@ const LEADERBOARD_SECTIONS = [
   ["busco-metric-distribution", "BUSCO metric distribution"],
   ["leaderboard-description", "Leaderboard description"],
   ["evaluate-your-own-model", "Evaluate your own model"],
+  ["benchmark-launch-date", "Benchmark launch date"],
 ];
 
 const REPOSITORY_URL = "https://github.com/alexeyshmelev/genatator-leaderboard-predictions";
-const CHART_BASE_HEIGHT = 510;
-const CHART_ROW_HEIGHT = 34;
+const CHART_BASE_HEIGHT = 560;
+const CHART_ROW_HEIGHT = 42;
 const CHART_BAR_SIZE = 18;
 
 function PanelTitle({ children, sx = {} }) {
@@ -113,10 +113,14 @@ function medal(index) {
   return "";
 }
 
-function PanelTitle({ children, sx = {} }) { return <Typography variant="h5" sx={{ mb: 1, ...sx }}>{children}</Typography>; }
-function HeaderTooltip({ label, description }) { return <MuiTooltip arrow placement="top" enterDelay={250} title={<Typography variant="body2" sx={{ lineHeight: 1.45 }}>{description}</Typography>}><Box component="span" className="metric-header-help">{label}</Box></MuiTooltip>; }
-const medal = (i) => (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "");
-const rowStyle = (i) => (i === 0 ? { backgroundColor: "#fff7cc" } : i === 1 ? { backgroundColor: "#f2f2f2" } : i === 2 ? { backgroundColor: "#f7e1c6" } : {});
+const rowStyle = (i) =>
+  i === 0
+    ? { backgroundColor: "#fff7cc" }
+    : i === 1
+      ? { backgroundColor: "#f2f2f2" }
+      : i === 2
+        ? { backgroundColor: "#f7e1c6" }
+        : {};
 
 function BuscoBar({ row }) { const total = Math.max((row.complete || 0) + (row.fragmented || 0) + (row.missing || 0), 1); return <Box sx={{ display: "flex", width: 240, height: 12, borderRadius: 1, overflow: "hidden", border: "1px solid #d0d7de" }}><Box sx={{ width: `${((row.complete || 0) / total) * 100}%`, backgroundColor: COLORS.complete }} /><Box sx={{ width: `${((row.fragmented || 0) / total) * 100}%`, backgroundColor: COLORS.fragmented }} /><Box sx={{ width: `${((row.missing || 0) / total) * 100}%`, backgroundColor: COLORS.missing }} /></Box>; }
 
@@ -206,11 +210,11 @@ export default function LeaderboardPanel() {
   })), [mergedBuscoRows, state, temporaryNameMap]);
 
   const geneChartHeight = useMemo(
-    () => Math.max(Math.ceil(CHART_BASE_HEIGHT * 1.1), geneChartData.length * CHART_ROW_HEIGHT + 100),
+    () => Math.max(CHART_BASE_HEIGHT, geneChartData.length * CHART_ROW_HEIGHT + 120),
     [geneChartData.length],
   );
   const buscoChartHeight = useMemo(
-    () => Math.max(Math.ceil(CHART_BASE_HEIGHT * 1.1), buscoChartData.length * CHART_ROW_HEIGHT + 100),
+    () => Math.max(CHART_BASE_HEIGHT, buscoChartData.length * CHART_ROW_HEIGHT + 120),
     [buscoChartData.length],
   );
 
@@ -338,7 +342,15 @@ export default function LeaderboardPanel() {
         <Stack spacing={1.4}>
           <PanelTitle>TLDR</PanelTitle>
           <Typography color="text.secondary" sx={{ fontSize: "0.92rem", lineHeight: 1.55, fontWeight: 700 }}>
-            This benchmark compares gene-segmentation models on T2T human chromosome 20. Higher gene-level scores mean more transcripts with exactly correct exon/CDS segmentation. BUSCO reports complete, fragmented, and missing mammalian single-copy orthologs. Tested models are expected to receive only the DNA sequence of an individual transcript, without intergenic regions or neighboring-gene context. Temporary uploads are shown only in the current browser session and disappear after page refresh. Permanent entries must be submitted to <a className="leaderboard-link" href={REPOSITORY_URL} target="_blank" rel="noopener noreferrer">{REPOSITORY_URL}</a>
+            This benchmark compares gene-segmentation models on T2T human chromosome 20. Higher gene-level scores mean more transcripts with exactly correct exon/CDS segmentation. BUSCO reports complete, fragmented, and missing mammalian single-copy orthologs. Tested models are expected to receive only the DNA sequence of an individual transcript, without intergenic regions or neighboring-gene context. Temporary uploads are shown only in the current browser session and disappear after page refresh. Permanent entries must be submitted to{" "}
+            <a
+              className="leaderboard-link"
+              href={REPOSITORY_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {REPOSITORY_URL}
+            </a>.
           </Typography>
         </Stack>
       </Paper>
@@ -350,10 +362,10 @@ export default function LeaderboardPanel() {
             <TableRow>
               <TableCell>Rank</TableCell>
               <TableCell>Model</TableCell>
-              <TableCell><HeaderTooltip label="exon lncRNA" description="Number of lnc_RNA transcripts whose exon segmentation is exactly matched by the model." /></TableCell>
-              <TableCell><HeaderTooltip label="exon mRNA" description="Number of mRNA transcripts whose exon segmentation is exactly matched by the model." /></TableCell>
-              <TableCell><HeaderTooltip label="CDS mRNA" description="Number of mRNA transcripts whose CDS segmentation is exactly matched by the model." /></TableCell>
-              <TableCell><HeaderTooltip label="Total score" description="Combined gene-level exact-match score for the leaderboard row. Higher values indicate more fully correct transcript structures." /></TableCell>
+              <TableCell><HeaderTooltip label="exon lncRNA" description="Number of lnc_RNA transcripts whose exon segmentation is exactly matched by the model. This score evaluates non-coding transcript structure, so CDS recovery is not relevant here." /></TableCell>
+              <TableCell><HeaderTooltip label="exon mRNA" description="Number of mRNA transcripts whose exon segmentation is exactly matched by the model. This includes the full transcribed exon structure, including UTR and coding exons." /></TableCell>
+              <TableCell><HeaderTooltip label="CDS mRNA" description="Number of mRNA transcripts whose CDS segmentation is exactly matched by the model. This focuses on the protein-coding structure and ignores non-coding UTR parts of the transcript." /></TableCell>
+              <TableCell><HeaderTooltip label="Total score" description="Combined gene-level exact-match score used for ranking this table. Higher values mean the model reconstructed more transcript structures correctly across lncRNA exons, mRNA exons, and mRNA CDS." /></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -378,11 +390,11 @@ export default function LeaderboardPanel() {
             <TableRow>
               <TableCell>Rank</TableCell>
               <TableCell>Model</TableCell>
-              <TableCell><HeaderTooltip label="Complete" description="Number of BUSCO genes found as complete in the model prediction." /></TableCell>
-              <TableCell><HeaderTooltip label="Fragmented" description="Number of BUSCO genes found only as fragmented in the model prediction." /></TableCell>
-              <TableCell><HeaderTooltip label="Missing" description="Number of BUSCO genes not found by BUSCO in the model prediction." /></TableCell>
-              <TableCell><HeaderTooltip label="Distribution" description="Visual summary of Complete, Fragmented, and Missing BUSCO counts for this model." /></TableCell>
-              <TableCell><HeaderTooltip label="Colored GFF" description="Download a BUSCO-colored GFF for visual inspection. Transcript records are colored by BUSCO status." /></TableCell>
+              <TableCell><HeaderTooltip label="Complete" description="Number of BUSCO genes found as complete in the model prediction. Higher values indicate better recovery of expected mammalian single-copy orthologs." /></TableCell>
+              <TableCell><HeaderTooltip label="Fragmented" description="Number of BUSCO genes found only as fragmented in the model prediction. These genes are partially recovered but not complete enough to count as fully reconstructed." /></TableCell>
+              <TableCell><HeaderTooltip label="Missing" description="Number of BUSCO genes not found in the model prediction. Lower values are better because fewer expected orthologs are absent." /></TableCell>
+              <TableCell><HeaderTooltip label="Distribution" description="Visual summary of Complete, Fragmented, and Missing BUSCO counts for this model. It helps compare BUSCO composition across models at a glance." /></TableCell>
+              <TableCell><HeaderTooltip label="Colored GFF" description="Download a BUSCO-colored GFF for visual inspection. Transcript records are colored by BUSCO status for easier viewing in a genome browser." /></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

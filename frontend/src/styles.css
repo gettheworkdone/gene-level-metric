@@ -8,6 +8,8 @@
   --green: #22c55e;
   --sky: #0ea5e9;
   --amber: #f59e0b;
+  --leaderboard-link-color: #00796b;
+  --leaderboard-link-hover-color: #005f56;
 }
 
 html,
@@ -323,10 +325,6 @@ body::after {
 .code-panel--python .py-string { color: #0f766e; }
 .code-panel--python .py-number { color: #1d4ed8; }
 
-:root {
-  --leaderboard-link-color: #00796b;
-  --leaderboard-link-hover-color: #005f56;
-}
 
 .leaderboard-link {
   color: var(--leaderboard-link-color, #00796b);
