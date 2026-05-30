@@ -323,27 +323,57 @@ body::after {
 .code-panel--python .py-string { color: #0f766e; }
 .code-panel--python .py-number { color: #1d4ed8; }
 
-.metric-header-help {
-  cursor: help;
-  border-bottom: 1px dotted rgba(15, 118, 110, 0.55);
-  text-underline-offset: 3px;
+:root {
+  --leaderboard-link-color: #00796b;
+  --leaderboard-link-hover-color: #005f56;
 }
 
-.code-panel-wrapper { position: relative; }
-.code-copy-btn {
-  position: absolute !important;
-  top: 10px;
-  right: 10px;
-  z-index: 2;
-  border: 1px solid rgba(15, 118, 110, 0.2) !important;
-  background: rgba(255, 255, 255, 0.92) !important;
-  color: #0f766e !important;
+.leaderboard-link {
+  color: var(--leaderboard-link-color, #00796b);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  text-decoration-style: solid;
 }
-.code-panel--python { padding-top: 2.6rem; white-space: pre; word-break: normal; overflow-x: auto; }
-.code-panel--python .py-comment { color: #6b7280; }
-.code-panel--python .py-keyword { color: #7c3aed; font-weight: 700; }
-.code-panel--python .py-string { color: #0f766e; }
-.code-panel--python .py-number { color: #1d4ed8; }
+
+.leaderboard-link:hover {
+  color: var(--leaderboard-link-hover-color, #005f56);
+}
+
+.leaderboard-link:visited {
+  color: var(--leaderboard-link-color, #00796b);
+}
+
+.metric-tooltip {
+  position: fixed;
+  z-index: 9999;
+  max-width: 420px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  border: 1px solid #b9d8d6;
+  background: #ffffff;
+  color: #12201d;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+  font-size: 13px;
+  line-height: 1.45;
+  pointer-events: none;
+  white-space: normal;
+}
+
+.metric-tooltip strong {
+  font-weight: 700;
+}
+
+.metric-tooltip-target {
+  cursor: default;
+  text-decoration: none;
+  border-bottom: none;
+}
+
+.metric-tooltip-target:hover {
+  text-decoration: none;
+  border-bottom: none;
+}
 
 .score-calc-animation { display: inline-flex; align-items: center; gap: 10px; color: #0f766e; }
 .score-calc-animation .orb {

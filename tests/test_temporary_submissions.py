@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import time
@@ -45,8 +46,14 @@ def test_temporary_submission_not_in_status(tmp_path, monkeypatch):
     st = wait_status(s, sid)
     assert st["status"] == "completed"
     overall = s.status()
-    assert all(not str(r.get("model_id", "")).startswith("temporary::") for r in overall["gene_rows"])
-    assert all(not str(r.get("model_id", "")).startswith("temporary::") for r in overall["busco_rows"])
+    assert all(
+        not str(r.get("model_id", "")).startswith("temporary::")
+        for r in overall["gene_rows"]
+    )
+    assert all(
+        not str(r.get("model_id", "")).startswith("temporary::")
+        for r in overall["busco_rows"]
+    )
     assert overall.get("user_gene_rows", []) == []
     assert overall.get("user_busco_rows", []) == []
 
