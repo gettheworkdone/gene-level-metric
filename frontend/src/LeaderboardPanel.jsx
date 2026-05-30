@@ -13,6 +13,7 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Tooltip as MuiTooltip,
   Typography,
 } from "@mui/material";
 import {
@@ -112,26 +113,12 @@ function medal(index) {
   return "";
 }
 
-function rowStyle(index) {
-  if (index === 0) return { backgroundColor: "#fff7cc" };
-  if (index === 1) return { backgroundColor: "#f2f2f2" };
-  if (index === 2) return { backgroundColor: "#f7e1c6" };
-  return {};
-}
+function PanelTitle({ children, sx = {} }) { return <Typography variant="h5" sx={{ mb: 1, ...sx }}>{children}</Typography>; }
+function HeaderTooltip({ label, description }) { return <MuiTooltip arrow placement="top" enterDelay={250} title={<Typography variant="body2" sx={{ lineHeight: 1.45 }}>{description}</Typography>}><Box component="span" className="metric-header-help">{label}</Box></MuiTooltip>; }
+const medal = (i) => (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "");
+const rowStyle = (i) => (i === 0 ? { backgroundColor: "#fff7cc" } : i === 1 ? { backgroundColor: "#f2f2f2" } : i === 2 ? { backgroundColor: "#f7e1c6" } : {});
 
-function BuscoBar({ row }) {
-  const total = Math.max((row.complete || 0) + (row.fragmented || 0) + (row.missing || 0), 1);
-  const completePct = ((row.complete || 0) / total) * 100;
-  const fragPct = ((row.fragmented || 0) / total) * 100;
-  const missPct = ((row.missing || 0) / total) * 100;
-  return (
-    <Box sx={{ display: "flex", width: 240, height: 12, borderRadius: 1, overflow: "hidden", border: "1px solid #d0d7de" }}>
-      <Box sx={{ width: `${completePct}%`, backgroundColor: COLORS.complete }} />
-      <Box sx={{ width: `${fragPct}%`, backgroundColor: COLORS.fragmented }} />
-      <Box sx={{ width: `${missPct}%`, backgroundColor: COLORS.missing }} />
-    </Box>
-  );
-}
+function BuscoBar({ row }) { const total = Math.max((row.complete || 0) + (row.fragmented || 0) + (row.missing || 0), 1); return <Box sx={{ display: "flex", width: 240, height: 12, borderRadius: 1, overflow: "hidden", border: "1px solid #d0d7de" }}><Box sx={{ width: `${((row.complete || 0) / total) * 100}%`, backgroundColor: COLORS.complete }} /><Box sx={{ width: `${((row.fragmented || 0) / total) * 100}%`, backgroundColor: COLORS.fragmented }} /><Box sx={{ width: `${((row.missing || 0) / total) * 100}%`, backgroundColor: COLORS.missing }} /></Box>; }
 
 export default function LeaderboardPanel() {
   const [state, setState] = useState(null);

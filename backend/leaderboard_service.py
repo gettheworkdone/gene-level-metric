@@ -79,6 +79,8 @@ class LeaderboardService:
             self._cleanup_expired_submissions()
             return self._state.to_dict()
 
+    def status(self) -> dict[str, Any]:
+        with self._lock: self._cleanup_expired_submissions(); return self._state.to_dict()
     def start(self) -> dict[str, Any]:
         with self._lock:
             if self._state.running:
@@ -194,8 +196,7 @@ class LeaderboardService:
                     message=f"Calculating {idx}/{len(prediction_files)}",
                 )
                 run_dir = self.runs_dir / model_id
-                if run_dir.exists():
-                    shutil.rmtree(run_dir)
+                if run_dir.exists(): shutil.rmtree(run_dir)
                 run_dir.mkdir(parents=True, exist_ok=True)
                 busco_result = busco.busco_prepare_gff(
                     pred_gff=str(pred_file),
@@ -336,8 +337,7 @@ class LeaderboardService:
                     self._cleanup_expired_submissions()
             finally:
                 with self._lock:
-                    self._state.queue_current = None
-                    self._state.queue_length = self._upload_queue.qsize()
+                    self._state.queue_current = None; self._state.queue_length = self._upload_queue.qsize()
                 self._upload_queue.task_done()
 
     def get_colored_gff_path(self, model_id: str) -> Path:
